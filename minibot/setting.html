@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>RED QUEEN MD — Settings</title>
+<link rel="stylesheet" href="../css/global.css"/>
+<style>
+.setting-page{padding:1.5rem 1.2rem 5rem;max-width:540px;margin:0 auto;}
+.setting-title{
+  font-family:'Orbitron',sans-serif;font-size:1.5rem;font-weight:900;
+  color:var(--red);text-align:center;margin-bottom:0.3rem;
+  text-shadow:0 0 20px rgba(232,0,29,0.4);
+}
+.setting-sub{text-align:center;color:var(--white3);font-size:0.75rem;letter-spacing:2px;font-family:'Share Tech Mono',monospace;margin-bottom:2rem;}
+
+/* Access locked overlay */
+.lock-overlay{
+  position:fixed;inset:0;z-index:500;
+  display:flex;align-items:center;justify-content:center;
+  padding:2rem;
+}
+.lock-card{
+  width:100%;max-width:400px;
+  background:rgba(12,3,3,0.97);border:1px solid rgba(232,0,29,0.25);
+  border-radius:20px;padding:2.5rem 2rem;
+  backdrop-filter:blur(20px);
+  animation:fadeUp 0.4s ease;
+}
+.lock-title{font-family:'Orbitron',sans-serif;font-size:1.4rem;font-weight:900;color:var(--red);text-align:center;margin-bottom:0.3rem;}
+.lock-sub{text-align:center;color:var(--white3);font-size:0.75rem;letter-spacing:2px;font-family:'Share Tech Mono',monospace;margin-bottom:2rem;}
+
+.s-block{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:1.2rem;margin-bottom:1rem;}
+.s-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem;}
+.s-row:last-child{margin:0;}
+.s-key{font-size:0.82rem;letter-spacing:1px;color:var(--red);font-weight:700;text-transform:uppercase;margin-bottom:0.7rem;}
+
+.opt-group-wrap{display:flex;flex-wrap:wrap;gap:0.5rem;}
+
+/* blocked words chips area */
+.chips-area{
+  background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);
+  border-radius:10px;padding:0.8rem;min-height:60px;
+  display:flex;flex-wrap:wrap;gap:0.5rem;
+}
+
+/* link checkboxes */
+.link-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;}
+.link-chip{
+  padding:0.6rem 1rem;border-radius:8px;text-align:center;
+  border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);
+  font-size:0.82rem;font-weight:700;color:var(--white3);
+  cursor:pointer;transition:all 0.2s;user-select:none;
+}
+.link-chip.active{background:rgba(232,0,29,0.15);border-color:rgba(232,0,29,0.35);color:var(--white);}
+
+/* owner logo */
+.logo-preview{
+  width:100%;border:2px solid rgba(232,0,29,0.4);border-radius:12px;
+  overflow:hidden;height:120px;background:var(--black3);
+  display:flex;align-items:center;justify-content:center;
+  margin-bottom:0.8rem;position:relative;
+}
+.logo-preview img{width:100%;height:100%;object-fit:cover;}
+.logo-placeholder{color:var(--white4);font-size:0.85rem;text-align:center;}
+
+/* voice footer */
+.voice-btns{display:grid;grid-template-columns:1fr auto 1fr;gap:0.5rem;align-items:center;}
+.voice-or{text-align:center;color:var(--white4);font-size:0.82rem;}
+
+/* save button - sticky */
+.save-bar{
+  position:fixed;bottom:0;left:0;right:0;z-index:50;
+  background:rgba(7,7,7,0.97);border-top:1px solid rgba(232,0,29,0.2);
+  padding:0.8rem 1.5rem;
+}
+.save-bar button{width:100%;padding:0.9rem;border-radius:12px;background:var(--red);border:none;color:var(--white);font-family:'Orbitron',sans-serif;font-size:0.85rem;font-weight:700;letter-spacing:2px;cursor:pointer;box-shadow:0 4px 20px rgba(232,0,29,0.3);}
+</style>
+</head>
+<body>
+<canvas id="particle-canvas"></canvas>
+<div class="bg-radial"></div>
+<nav id="navbar"></nav>
+
+<!-- ACCESS LOCK -->
+<div class="lock-overlay" id="lockOverlay">
+  <div class="lock-card">
+    <div class="lock-title">ACCESS CONTROL</div>
+    <div class="lock-sub">VERIFY IDENTITY TO PROCEED</div>
+    <div class="form-group">
+      <label class="form-label">WHATSAPP NUMBER</label>
+      <input class="form-input" id="lockNum" type="tel" placeholder="94771234567"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">ACCESS PASSWORD</label>
+      <input class="form-input" id="lockPass" type="password" placeholder="••••••••"/>
+      <div style="font-size:0.75rem;color:var(--white4);margin-top:0.4rem;">Send <span style="color:var(--red)">.getpass</span> to bot on WhatsApp to get your password.</div>
+    </div>
+    <button class="btn btn-red btn-full" onclick="doLogin()" style="margin-top:0.5rem;">CONFIRM IDENTITY</button>
+    <div id="loginErr" style="display:none;margin-top:0.8rem;color:var(--red);font-size:0.82rem;text-align:center;"></div>
+  </div>
+</div>
+
+<!-- MAIN SETTINGS -->
+<div class="page-wrap" id="mainContent" style="display:none;">
+<div class="setting-page">
+  <div class="setting-title">BOT CONFIGURATION</div>
+  <div class="setting-sub">CUSTOMIZE YOUR BOT COMPANION</div>
+
+  <!-- ── PRIVACY ── -->
+  <div class="cfg-section">PRIVACY</div>
+  <div class="s-block">
+    <div class="toggle-wrap" style="margin-bottom:0.8rem;">
+      <div class="toggle-info"><div class="toggle-label">ALLOWS ONLINE</div></div>
+      <label class="toggle"><input type="checkbox" id="allowsOnline"/><div class="toggle-track"></div></label>
+    </div>
+    <div class="toggle-wrap">
+      <div class="toggle-info"><div class="toggle-label">CALL REJECT</div></div>
+      <label class="toggle"><input type="checkbox" id="callReject"/><div class="toggle-track"></div></label>
+    </div>
+  </div>
+
+  <div class="s-block">
+    <div class="s-key">ANTI DELETE</div>
+    <div class="opt-group-wrap" id="antiDelete">
+      <button class="opt-btn" data-val="OFF" onclick="optSel(this,'antiDelete')">OFF</button>
+      <button class="opt-btn" data-val="ALL" onclick="optSel(this,'antiDelete')">ALL</button>
+      <button class="opt-btn" data-val="GROUP" onclick="optSel(this,'antiDelete')">GROUP</button>
+      <button class="opt-btn full" data-val="INBOX" onclick="optSel(this,'antiDelete')">INBOX</button>
+    </div>
+  </div>
+
+  <div class="s-block">
+    <div class="s-key">ANTI VIEW ONCE</div>
+    <div class="opt-group-wrap" id="antiViewOnce">
+      <button class="opt-btn" data-val="OFF" onclick="optSel(this,'antiViewOnce')">OFF</button>
+      <button class="opt-btn active" data-val="ALL" onclick="optSel(this,'antiViewOnce')">ALL</button>
+    </div>
+  </div>
+
+  <div class="s-block">
+    <div class="s-key">ANTI SEND</div>
+    <div class="opt-group-wrap" id="antiSend">
+      <button class="opt-btn active" data-val="ME" onclick="optSel(this,'antiSend')">ME</button>
+      <button class="opt-btn" data-val="FROM" onclick="optSel(this,'antiSend')">FROM</button>
+    </div>
+  </div>
+
+  <div class="s-block">
+    <div class="toggle-wrap" style="margin-bottom:0.8rem;">
+      <div class="toggle-info"><div class="toggle-label">ANTI LINK</div></div>
+      <label class="toggle"><input type="checkbox" id="antiLink"/><div class="toggle-track"></div></label>
+    </div>
+    <div class="s-key" style="margin-top:0.8rem;">BLOCKED LINKS</div>
+    <div class="link-grid">
+      <div class="link-chip" onclick="toggleLink(this)">WHATSAPP</div>
+      <div class="link-chip" onclick="toggleLink(this)">FACEBOOK</div>
+      <div class="link-chip" onclick="toggleLink(this)">YOUTUBE</div>
+      <div class="link-chip" onclick="toggleLink(this)">TIKTOK</div>
+      <div class="link-chip" onclick="toggleLink(this)">INSTAGRAM</div>
+      <div class="link-chip" onclick="toggleLink(this)">TWITTER</div>
+    </div>
+    <div style="margin-top:0.8rem;">
+      <input class="form-input" id="customLink" placeholder="Add custom domain (example.com)" style="margin-bottom:0.5rem;"/>
+      <button class="btn btn-red btn-full btn-sm" onclick="addCustomLink()">ADD</button>
+    </div>
+    <div class="chips-area" id="customLinks" style="margin-top:0.5rem;">
+      <span style="color:var(--white4);font-size:0.82rem;">No items added yet</span>
+    </div>
+  </div>
+
+  <div class="s-block">
+    <div class="toggle-wrap" style="margin-bottom:0.8rem;">
+      <div class="toggle-info"><div class="toggle-label">ANTI BAD WORDS</div></div>
+      <label class="toggle"><input type="checkbox" id="antiBadWords"/><div class="toggle-track"></div></label>
+    </div>
+    <div class="s-key" style="margin-top:0.5rem;">BLOCKED WORDS</div>
+    <div style="display:flex;gap:0.5rem;margin-bottom:0.5rem;">
+      <input class="form-input" id="wordInput" placeholder="Add a single word (max 30 chars)" maxlength="30" style="flex:1;"/>
+      <button class="btn btn-red btn-sm" onclick="addWord()">ADD</button>
+    </div>
+    <div class="chips-area" id="wordChips"></div>
+    <div style="margin-top:0.8rem;">
+      <textarea class="form-textarea" id="bulkWords" placeholder="Add multiple words separated by commas" rows="3"></textarea>
+      <button class="btn btn-red btn-full btn-sm" style="margin-top:0.5rem;" onclick="addBulkWords()">ADD ALL</button>
+    </div>
+    <div id="wordCount" style="color:var(--white4);font-size:0.78rem;text-align:center;margin-top:0.5rem;">0 words added (max 100 words)</div>
+  </div>
+
+  <div class="s-block">
+    <div class="toggle-wrap" style="margin-bottom:0.8rem;">
+      <div class="toggle-info"><div class="toggle-label">ANTI BOT</div></div>
+      <label class="toggle"><input type="checkbox" id="antiBot"/><div class="toggle-track"></div></label>
+    </div>
+    <div class="toggle-wrap">
+      <div class="toggle-info"><div class="toggle-label">ANTI MENTION</div></div>
+      <label class="toggle"><input type="checkbox" id="antiMention"/><div class="toggle-track"></div></label>
+    </div>
+  </div>
+
+  <div class="s-block">
+    <div class="s-key">ANTI EDIT</div>
+    <div class="opt-group-wrap" id="antiEdit">
+      <button class="opt-btn" data-val="OFF" onclick="optSel(this,'antiEdit')">OFF</button>
+      <button class="opt-btn active" data-val="ALL" onclick="optSel(this,'antiEdit')">ALL</button>
+      <button class="opt-btn" data-val="GROUP" onclick="optSel(this,'antiEdit')">GROUP</button>
+      <button class="opt-btn full" data-val="INBOX" onclick="optSel(this,'antiEdit')">INBOX</button>
+    </div>
+  </div>
+
+  <div class="s-block">
+    <div class="s-key">ANTI ACTION</div>
+    <div class="opt-group-wrap" id="antiAction">
+      <button class="opt-btn" data-val="DELETE" onclick="optSel(this,'antiAction')">DELETE</button>
+      <button class="opt-btn" data-val="WARN" onclick="optSel(this,'antiAction')">WARN</button>
+      <button class="opt-btn" data-val="KICK" onclick="optSel(this,'antiAction')">KICK</button>
+    </div>
+  </div>
+
+  <div class="s-block">
+    <div class="s-key">WARN COUNT</div>
+    <input class="form-input" id="warnCount" type="number" value="10" min="1" max="100"/>
+  </div>
+
+  <!-- ── STATUS ── -->
+  <div class="cfg-section">STATUS</div>
+  <div class="s-block">
+    <div class="toggle-wrap" style="margin-bottom:0.8rem;">
+      <div class="toggle-info"><div class="toggle-label">STATUS VIEW</div></div>
+      <label class="toggle"><input type="checkbox" id="statusView" checked/><div class="toggle-track"></div></label>
+    </div>
+    <div class="toggle-wrap" style="margin-bottom:0.8rem;">
+      <div class="toggle-info"><div class="toggle-label">STATUS REACT</div></div>
+      <label class="toggle"><input type="checkbox" id="statusReact" checked/><div class="toggle-track"></div></label>
+    </div>
+    <div class="toggle-wrap">
+      <div class="toggle-info"><div class="toggle-label">STATUS SAVE</div></div>
+      <label class="toggle"><input type="checkbox" id="statusSave" checked/><div class="toggle-track"></div></label>
+    </div>
+  </div>
+
+  <div class="s-block">
+    <div class="s-key">REACT EMOJI</div>
+    <input class="form-input" id="reactEmoji" value="🥰" style="font-size:1.4rem;" maxlength="4"/>
+  </div>
+
+  <!-- ── CONFIG ── -->
+  <div class="cfg-section">CONFIG</div>
+  <div class="s-block">
+    <div class="s-key">WORK TYPE</div>
+    <div class="opt-group-wrap" id="workType">
+      <button class="opt-btn" data-val="PUBLIC" onclick="optSel(this,'workType')">PUBLIC</button>
+      <button class="opt-btn active" data-val="PRIVATE" onclick="optSel(this,'workType')">PRIVATE</button>
+      <button class="opt-btn" data-val="GROUP" onclick="optSel(this,'workType')">GROUP</button>
+      <button class="opt-btn" data-val="INBOX" onclick="optSel(this,'workType')">INBOX</button>
+      <button class="opt-btn" data-val="ADMIN" onclick="optSel(this,'workType')">ADMIN</button>
+    </div>
+  </div>
+
+  <div class="s-block">
+    <div class="s-key">LANGUAGE</div>
+    <div class="opt-group-wrap" id="language">
+      <button class="opt-btn active" data-val="ENGLISH" onclick="optSel(this,'language')">ENGLISH</button>
+      <button class="opt-btn" data-val="SINHALA" onclick="optSel(this,'language')">SINHALA</button>
+      <button class="opt-btn full" data-val="ARABIC" onclick="optSel(this,'language')">ARABIC</button>
+    </div>
+  </div>
+
+  <div class="s-block">
+    <div class="s-key">PREFIX (ONE SYMBOL)</div>
+    <input class="form-input" id="prefix" value="." maxlength="2" style="font-size:1.4rem;"/>
+  </div>
+
+  <div class="s-block">
+    <div class="s-key">AUTO REACT</div>
+    <div class="opt-group-wrap" id="autoReact">
+      <button class="opt-btn active" data-val="OFF" onclick="optSel(this,'autoReact')">OFF</button>
+      <button class="opt-btn" data-val="ALL" onclick="optSel(this,'autoReact')">ALL</button>
+      <button class="opt-btn" data-val="GROUP" onclick="optSel(this,'autoReact')">GROUP</button>
+      <button class="opt-btn full" data-val="INBOX" onclick="optSel(this,'autoReact')">INBOX</button>
+    </div>
+  </div>
+
+  <div class="s-block">
+    <div class="s-key">AI REPLY</div>
+    <div class="opt-group-wrap" id="aiReply">
+      <button class="opt-btn active" data-val="OFF" onclick="optSel(this,'aiReply')">OFF</button>
+      <button class="opt-btn" data-val="ALL" onclick="optSel(this,'aiReply')">ALL</button>
+      <button class="opt-btn" data-val="GROUP" onclick="optSel(this,'aiReply')">GROUP</button>
+      <button class="opt-btn full" data-val="INBOX" onclick="optSel(this,'aiReply')">INBOX</button>
+    </div>
+  </div>
+
+  <!-- ── OWNER ── -->
+  <div class="cfg-section">OWNER</div>
+  <div class="s-block">
+    <div class="s-key">OWNER NAME</div>
+    <input class="form-input" id="ownerName" value="PAHAN"/>
+  </div>
+  <div class="s-block">
+    <div class="s-key">OWNER FROM</div>
+    <input class="form-input" id="ownerFrom" value="SRI LANKA"/>
+  </div>
+  <div class="s-block">
+    <div class="s-key">OWNER AGE</div>
+    <input class="form-input" id="ownerAge" value="999+"/>
+  </div>
+  <div class="s-block">
+    <div class="s-key">OWNER LOGO</div>
+    <div class="logo-preview" id="logoPreview">
+      <div class="logo-placeholder">📷 No logo uploaded</div>
+    </div>
+    <label class="btn btn-grey btn-full" style="cursor:pointer;">
+      Change Image <input type="file" accept="image/*" id="logoInput" style="display:none" onchange="handleLogo(event)"/>
+    </label>
+  </div>
+  <div class="s-block">
+    <div class="s-key">VOICE FOOTER (MP3 &lt; 5S)</div>
+    <div class="voice-btns">
+      <label class="btn btn-grey" style="cursor:pointer;">Upload MP3<input type="file" accept="audio/mp3,audio/*" style="display:none" onchange="handleVoice(event)"/></label>
+      <span class="voice-or">OR</span>
+      <button class="btn btn-outline" onclick="recordVoice()" style="border:1px solid rgba(232,0,29,0.4);color:var(--red);">Record (5s)</button>
+    </div>
+    <div id="voiceStatus" style="margin-top:0.5rem;font-size:0.8rem;color:var(--white4);text-align:center;"></div>
+  </div>
+</div>
+
+<!-- SAVE BAR -->
+<div class="save-bar">
+  <button onclick="saveAll()">💾 SAVE SETTINGS</button>
+</div>
+
+</div><!-- end page-wrap -->
+
+<script src="../js/app.js"></script>
+<script>
+let words = [];
+let customLinks = [];
+const optStates = {};
+
+function checkAccess() {
+  const lock = document.getElementById('lockOverlay');
+  const main = document.getElementById('mainContent');
+  if (rqAuth.isLoggedIn()) { lock.style.display='none'; main.style.display='block'; loadSettings(); }
+  else { lock.style.display='flex'; main.style.display='none'; }
+}
+
+function doLogin() {
+  const num = document.getElementById('lockNum').value.trim();
+  const pass = document.getElementById('lockPass').value.trim();
+  const err = document.getElementById('loginErr');
+  const result = rqAuth.login(num, pass);
+  if (result.ok) { checkAccess(); showToast('✅ Access granted!', 'success'); }
+  else { err.style.display='block'; err.textContent = result.msg || 'Invalid credentials'; }
+}
+
+function optSel(btn, group) {
+  document.querySelectorAll(`#${group} .opt-btn`).forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  optStates[group] = btn.dataset.val;
+  rqSettings.set(group, btn.dataset.val);
+}
+
+function toggleLink(el) {
+  el.classList.toggle('active');
+  const links = [...document.querySelectorAll('.link-chip.active')].map(c => c.textContent);
+  rqSettings.set('blockedLinks', links);
+}
+
+function addCustomLink() {
+  const val = document.getElementById('customLink').value.trim();
+  if (!val) return;
+  customLinks.push(val);
+  document.getElementById('customLink').value = '';
+  renderCustomLinks();
+  rqSettings.set('customLinks', customLinks);
+}
+
+function renderCustomLinks() {
+  const area = document.getElementById('customLinks');
+  if (!customLinks.length) { area.innerHTML = '<span style="color:var(--white4);font-size:0.82rem;">No items added yet</span>'; return; }
+  area.innerHTML = customLinks.map((w,i) => `<div class="chip">${w}<span class="chip-x" onclick="removeCustomLink(${i})">×</span></div>`).join('');
+}
+function removeCustomLink(i) { customLinks.splice(i,1); renderCustomLinks(); rqSettings.set('customLinks', customLinks); }
+
+function addWord() {
+  const val = document.getElementById('wordInput').value.trim();
+  if (!val || words.length >= 100) return;
+  if (!words.includes(val)) { words.push(val); document.getElementById('wordInput').value = ''; renderWords(); rqSettings.set('blockedWords', words); }
+}
+function addBulkWords() {
+  const bulk = document.getElementById('bulkWords').value.split(',').map(w => w.trim()).filter(Boolean);
+  words = [...new Set([...words, ...bulk])].slice(0, 100);
+  document.getElementById('bulkWords').value = '';
+  renderWords(); rqSettings.set('blockedWords', words);
+}
+function removeWord(i) { words.splice(i,1); renderWords(); rqSettings.set('blockedWords', words); }
+function renderWords() {
+  const area = document.getElementById('wordChips');
+  area.innerHTML = words.length ? words.map((w,i) => `<div class="chip">${w}<span class="chip-x" onclick="removeWord(${i})">×</span></div>`).join('') : '';
+  document.getElementById('wordCount').textContent = `${words.length} words added (max 100 words)`;
+}
+
+function handleLogo(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const prev = document.getElementById('logoPreview');
+    prev.innerHTML = `<img src="${ev.target.result}" alt="Logo"/>`;
+    rqSettings.set('ownerLogo', ev.target.result);
+  };
+  reader.readAsDataURL(file);
+}
+
+function handleVoice(e) {
+  document.getElementById('voiceStatus').textContent = '✅ Voice footer uploaded!';
+}
+
+function recordVoice() {
+  const vs = document.getElementById('voiceStatus');
+  vs.textContent = '🎙️ Recording... (5 seconds)';
+  let t = 5;
+  const iv = setInterval(() => {
+    t--; vs.textContent = `🎙️ Recording... ${t}s`;
+    if (t <= 0) { clearInterval(iv); vs.textContent = '✅ Voice recorded!'; }
+  }, 1000);
+}
+
+function loadSettings() {
+  const s = rqSettings.get();
+  // toggles
+  ['allowsOnline','callReject','antiLink','antiBadWords','antiBot','antiMention','statusView','statusReact','statusSave'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && s[id] !== undefined) el.checked = s[id];
+  });
+  // opt groups
+  ['antiDelete','antiViewOnce','antiSend','antiEdit','antiAction','workType','language','autoReact','aiReply'].forEach(group => {
+    const val = s[group];
+    if (val) {
+      const btn = document.querySelector(`#${group} [data-val="${val}"]`);
+      if (btn) { document.querySelectorAll(`#${group} .opt-btn`).forEach(b => b.classList.remove('active')); btn.classList.add('active'); }
+    }
+  });
+  // inputs
+  ['reactEmoji','warnCount','ownerName','ownerFrom','ownerAge','prefix'].forEach(id => {
+    if (s[id] !== undefined) { const el = document.getElementById(id); if(el) el.value = s[id]; }
+  });
+  // words & links
+  words = s.blockedWords || [];
+  customLinks = s.customLinks || [];
+  renderWords(); renderCustomLinks();
+  // blocked link chips
+  const bl = s.blockedLinks || [];
+  document.querySelectorAll('.link-chip').forEach(c => { if (bl.includes(c.textContent)) c.classList.add('active'); });
+  // logo
+  if (s.ownerLogo) { document.getElementById('logoPreview').innerHTML = `<img src="${s.ownerLogo}" alt="Logo"/>`; }
+}
+
+function saveAll() {
+  ['allowsOnline','callReject','antiLink','antiBadWords','antiBot','antiMention','statusView','statusReact','statusSave'].forEach(id => {
+    const el = document.getElementById(id); if(el) rqSettings.set(id, el.checked);
+  });
+  ['reactEmoji','warnCount','ownerName','ownerFrom','ownerAge','prefix'].forEach(id => {
+    const el = document.getElementById(id); if(el) rqSettings.set(id, el.value);
+  });
+  showToast('✅ Settings saved!', 'success');
+}
+
+document.addEventListener('DOMContentLoaded', checkAccess);
+document.getElementById('lockPass')?.addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+</script>
+</body>
+</html>

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>RED QUEEN MD — Channel</title>
+<link rel="stylesheet" href="css/global.css"/>
+<style>
+.ch-page{padding:2rem 1.5rem 5rem;max-width:500px;margin:0 auto;position:relative;z-index:1;text-align:center;}
+.page-hero-hd{font-family:'Orbitron',sans-serif;font-size:2rem;font-weight:900;margin-bottom:0.5rem;}
+.page-hero-hd span{color:var(--red);}
+
+.ch-hero{
+  background:linear-gradient(135deg,rgba(232,0,29,0.1),rgba(245,166,35,0.05));
+  border:1px solid rgba(232,0,29,0.2);border-radius:20px;
+  padding:2.5rem 1.5rem;margin-bottom:1.5rem;
+}
+.ch-logo{font-size:4rem;margin-bottom:1rem;}
+.ch-name{font-family:'Orbitron',sans-serif;font-size:1.3rem;font-weight:900;margin-bottom:0.5rem;}
+.ch-name span{color:var(--red);}
+.ch-desc{color:var(--white3);font-size:0.88rem;line-height:1.7;margin-bottom:1.5rem;}
+.ch-stats{display:flex;justify-content:center;gap:2rem;margin-bottom:1.5rem;}
+.ch-st{text-align:center;}
+.ch-st-num{font-family:'Orbitron',sans-serif;font-size:1.5rem;font-weight:900;color:var(--red);}
+.ch-st-lbl{font-size:0.72rem;color:var(--white3);letter-spacing:1px;text-transform:uppercase;font-family:'Share Tech Mono',monospace;}
+
+.ch-perks{display:flex;flex-direction:column;gap:0.7rem;margin-bottom:1.5rem;text-align:left;}
+.ch-perk{
+  display:flex;align-items:center;gap:12px;
+  background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);
+  border-radius:12px;padding:0.9rem 1.1rem;
+}
+.cp-ico{font-size:1.2rem;width:36px;height:36px;background:rgba(232,0,29,0.1);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.cp-txt{font-size:0.88rem;color:var(--white2);font-weight:600;}
+
+.coin-earn-card{
+  background:rgba(245,166,35,0.07);border:1px solid rgba(245,166,35,0.2);
+  border-radius:16px;padding:1.5rem;margin-bottom:1.5rem;
+}
+.coin-earn-card h3{font-family:'Orbitron',sans-serif;font-size:0.9rem;color:var(--gold);margin-bottom:0.8rem;}
+.coin-earn-card p{color:var(--white3);font-size:0.84rem;line-height:1.6;margin-bottom:1rem;}
+</style>
+</head>
+<body>
+<canvas id="particle-canvas"></canvas>
+<div class="bg-radial"></div>
+<nav id="navbar"></nav>
+<div class="page-wrap">
+<div class="ch-page">
+
+  <div class="sec-label anim-up">Official</div>
+  <h1 class="page-hero-hd anim-up d1"><span>Our</span> Channel</h1>
+  <div style="color:var(--white3);font-size:0.8rem;letter-spacing:2px;font-family:'Share Tech Mono',monospace;margin-bottom:2rem;" class="anim-up d1">STAY CONNECTED</div>
+
+  <div class="ch-hero anim-up d2">
+    <div class="ch-logo">👑</div>
+    <div class="ch-name"><span>RED</span> QUEEN MD</div>
+    <div class="ch-desc">Official WhatsApp Channel for RED QUEEN MD bot updates, announcements, tips and community.</div>
+    <div class="ch-stats">
+      <div class="ch-st"><div class="ch-st-num">1K+</div><div class="ch-st-lbl">Followers</div></div>
+      <div class="ch-st"><div class="ch-st-num">Daily</div><div class="ch-st-lbl">Updates</div></div>
+      <div class="ch-st"><div class="ch-st-num">Free</div><div class="ch-st-lbl">To Join</div></div>
+    </div>
+    <a href="https://whatsapp.com/channel/0029Vb7ChKeAojYnYh1uMo3q" target="_blank" class="btn btn-red btn-full" style="font-family:'Orbitron',sans-serif;letter-spacing:1px;">
+      💬 JOIN CHANNEL NOW
+    </a>
+  </div>
+
+  <div class="ch-perks anim-up d3">
+    <div class="ch-perk"><div class="cp-ico">🔔</div><div class="cp-txt">Get instant bot update notifications</div></div>
+    <div class="ch-perk"><div class="cp-ico">🆕</div><div class="cp-txt">First access to new features & commands</div></div>
+    <div class="ch-perk"><div class="cp-ico">💡</div><div class="cp-txt">Tips, tricks and bot tutorials</div></div>
+    <div class="ch-perk"><div class="cp-ico">🐛</div><div class="cp-txt">Bug fixes and maintenance announcements</div></div>
+    <div class="ch-perk"><div class="cp-ico">🎁</div><div class="cp-txt">Exclusive giveaways for channel members</div></div>
+  </div>
+
+  <div class="coin-earn-card anim-up d4">
+    <h3>💰 Earn Coins by Reacting!</h3>
+    <p>React to posts in our channel and earn coins automatically through the bot's channel react system. More reacts = more coins!</p>
+    <a href="minibot/coin.html" class="btn btn-gold btn-full">View Coin System</a>
+  </div>
+
+</div>
+<footer class="site-footer" style="position:relative;z-index:1;background:rgba(5,5,5,0.97);border-top:1px solid rgba(232,0,29,0.1);padding:2rem 1.5rem;text-align:center;">
+  <div style="font-family:'Orbitron',sans-serif;font-size:1rem;font-weight:900;margin-bottom:0.5rem;"><span style="color:var(--red);">RED</span> QUEEN MD</div>
+  <p style="color:var(--white4);font-size:0.75rem;font-family:'Share Tech Mono',monospace;">© 2025 RED QUEEN TEAM</p>
+</footer>
+</div>
+<script src="js/app.js"></script>
+</body>
+</html>

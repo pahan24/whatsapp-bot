@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>RED QUEEN MD — Auto Save</title>
+<link rel="stylesheet" href="../css/global.css"/>
+<style>
+.as-page{padding:1.5rem 1.2rem 6rem;max-width:520px;margin:0 auto;}
+
+.as-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:2rem;flex-wrap:wrap;gap:1rem;}
+.as-title{font-family:'Orbitron',sans-serif;font-size:1.4rem;font-weight:900;line-height:1.2;}
+.as-sub{font-family:'Share Tech Mono',monospace;font-size:0.75rem;color:var(--white3);letter-spacing:1px;margin-top:0.3rem;}
+
+/* stat grid */
+.stat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;margin-bottom:1.5rem;}
+.sg-card{background:rgba(15,4,4,0.85);border:1px solid rgba(232,0,29,0.14);border-radius:14px;padding:1.2rem;text-align:center;}
+.sg-num{font-family:'Orbitron',sans-serif;font-size:2rem;font-weight:900;}
+.sg-num.g{color:var(--green);}
+.sg-num.r{color:var(--red);}
+.sg-num.gold{color:var(--gold);}
+.sg-lbl{font-family:'Share Tech Mono',monospace;font-size:0.68rem;letter-spacing:1px;text-transform:uppercase;color:var(--white3);margin-top:0.3rem;}
+
+/* block */
+.as-block{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:16px;overflow:hidden;margin-bottom:1rem;}
+.as-block-hd{padding:0.9rem 1.2rem;border-bottom:1px solid rgba(255,255,255,0.06);font-family:'Orbitron',sans-serif;font-size:0.78rem;font-weight:700;letter-spacing:1px;display:flex;align-items:center;gap:8px;}
+.as-block-bd{padding:1.2rem;}
+
+/* email setup */
+.email-status{
+  display:flex;align-items:center;gap:10px;
+  padding:0.8rem 1rem;border-radius:10px;margin-bottom:1rem;
+  font-size:0.85rem;font-weight:600;
+}
+.email-status.connected{background:rgba(0,200,80,0.08);border:1px solid rgba(0,200,80,0.2);color:var(--green);}
+.email-status.disconnected{background:rgba(232,0,29,0.07);border:1px solid rgba(232,0,29,0.2);color:var(--red);}
+.es-dot{width:8px;height:8px;border-radius:50%;background:currentColor;animation:blink 1.5s infinite;flex-shrink:0;}
+
+/* inbox list */
+.inbox-list{display:flex;flex-direction:column;gap:0.6rem;}
+.inbox-item{
+  background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.06);
+  border-radius:12px;padding:0.9rem 1rem;
+  transition:border-color 0.2s;
+}
+.inbox-item:hover{border-color:rgba(232,0,29,0.2);}
+.inbox-item.unread{border-left:3px solid var(--red);}
+.ib-top{display:flex;align-items:center;gap:8px;margin-bottom:0.4rem;}
+.ib-avatar{
+  width:32px;height:32px;border-radius:50%;
+  background:rgba(232,0,29,0.15);border:1px solid rgba(232,0,29,0.3);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Orbitron',sans-serif;font-size:0.65rem;font-weight:900;color:var(--red);
+  flex-shrink:0;
+}
+.ib-name{font-weight:700;font-size:0.88rem;flex:1;}
+.ib-time{font-family:'Share Tech Mono',monospace;font-size:0.68rem;color:var(--white4);}
+.ib-num{font-family:'Share Tech Mono',monospace;font-size:0.72rem;color:var(--gold);}
+.ib-msg{font-size:0.82rem;color:var(--white3);line-height:1.5;margin-top:0.3rem;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+.ib-actions{display:flex;gap:0.4rem;margin-top:0.6rem;}
+.ib-btn{
+  padding:0.3rem 0.8rem;border-radius:6px;font-size:0.72rem;font-weight:700;
+  cursor:pointer;border:none;transition:all 0.2s;
+}
+.ib-reply{background:rgba(232,0,29,0.12);color:var(--red);border:1px solid rgba(232,0,29,0.25);}
+.ib-reply:hover{background:rgba(232,0,29,0.22);}
+.ib-del{background:rgba(255,255,255,0.05);color:var(--white4);border:1px solid rgba(255,255,255,0.1);}
+.ib-del:hover{color:var(--red);}
+
+.empty-inbox{text-align:center;padding:3rem 1rem;}
+.empty-ico{font-size:3rem;opacity:0.3;margin-bottom:0.8rem;}
+.empty-txt{color:var(--white4);font-size:0.85rem;}
+
+/* notify settings */
+.ns-row{display:flex;align-items:center;justify-content:space-between;padding:0.8rem 0;border-bottom:1px solid rgba(255,255,255,0.04);}
+.ns-row:last-child{border:none;}
+.ns-info{}
+.ns-label{font-weight:700;font-size:0.88rem;color:var(--red);margin-bottom:0.15rem;}
+.ns-desc{font-size:0.76rem;color:var(--white3);}
+
+/* search */
+.inbox-search{
+  width:100%;background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.08);border-radius:10px;
+  padding:0.7rem 1rem;color:var(--white);font-family:'Rajdhani',sans-serif;
+  font-size:0.9rem;outline:none;margin-bottom:1rem;transition:border-color 0.2s;
+}
+.inbox-search:focus{border-color:var(--red);}
+.inbox-search::placeholder{color:var(--white4);}
+
+/* filter tabs */
+.filter-tabs{display:flex;gap:0.4rem;margin-bottom:1rem;overflow-x:auto;padding-bottom:0.2rem;}
+.ft{padding:0.4rem 0.9rem;border-radius:6px;font-size:0.78rem;font-weight:700;cursor:pointer;border:1px solid rgba(255,255,255,0.1);background:transparent;color:var(--white3);white-space:nowrap;transition:all 0.2s;}
+.ft.active{background:var(--red);border-color:var(--red);color:var(--white);}
+</style>
+</head>
+<body>
+<canvas id="particle-canvas"></canvas>
+<div class="bg-radial"></div>
+<nav id="navbar"></nav>
+
+<div class="page-wrap">
+<div class="as-page">
+
+  <!-- HEADER -->
+  <div class="as-header anim-up">
+    <div>
+      <div class="as-title">AUTO SAVE</div>
+      <div class="as-sub">UNKNOWN MESSAGE INBOX + EMAIL ALERTS</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:0.7rem;">
+      <label class="toggle"><input type="checkbox" id="asToggle" checked onchange="toggleSave()"/><div class="toggle-track"></div></label>
+      <span id="asLabel" style="font-weight:700;font-size:0.85rem;color:var(--green);">ACTIVE</span>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stat-grid anim-up d1">
+    <div class="sg-card"><div class="sg-num g" id="totalSaved">0</div><div class="sg-lbl">Total Saved</div></div>
+    <div class="sg-card"><div class="sg-num r" id="unreadCount">0</div><div class="sg-lbl">Unread</div></div>
+    <div class="sg-card"><div class="sg-num gold" id="todayCount">0</div><div class="sg-lbl">Today</div></div>
+    <div class="sg-card"><div class="sg-num" id="uniqueNums">0</div><div class="sg-lbl">Unique Senders</div></div>
+  </div>
+
+  <!-- EMAIL NOTIFICATIONS -->
+  <div class="as-block anim-up d2">
+    <div class="as-block-hd">📧 Email Notifications</div>
+    <div class="as-block-bd">
+      <div class="email-status disconnected" id="emailStatus">
+        <div class="es-dot"></div>
+        <span id="emailStatusTxt">Not configured — enter email below</span>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notification Email</label>
+        <input class="form-input" id="notifEmail" type="email" placeholder="your@email.com" oninput="onEmailChange()"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Send Notification When</label>
+        <div class="ns-row">
+          <div class="ns-info"><div class="ns-label">New Unknown Number</div><div class="ns-desc">Someone new messages the bot</div></div>
+          <label class="toggle"><input type="checkbox" id="notifNewNum" checked/><div class="toggle-track"></div></label>
+        </div>
+        <div class="ns-row">
+          <div class="ns-info"><div class="ns-label">Message from Saved Number</div><div class="ns-desc">Known contact messages bot</div></div>
+          <label class="toggle"><input type="checkbox" id="notifKnown"/><div class="toggle-track"></div></label>
+        </div>
+        <div class="ns-row">
+          <div class="ns-info"><div class="ns-label">Daily Summary</div><div class="ns-desc">Daily digest of all messages</div></div>
+          <label class="toggle"><input type="checkbox" id="notifDaily"/><div class="toggle-track"></div></label>
+        </div>
+      </div>
+      <button class="btn btn-red btn-full" onclick="saveEmailSettings()">💾 Save Email Settings</button>
+      <div style="font-size:0.72rem;color:var(--white4);text-align:center;margin-top:0.6rem;">
+        📌 Bot uses EmailJS to send notifications. Configure EmailJS keys in <code style="color:var(--red);">.env</code>
+      </div>
+    </div>
+  </div>
+
+  <!-- HOW IT WORKS -->
+  <div class="as-block anim-up d2" style="background:rgba(0,200,80,0.04);border-color:rgba(0,200,80,0.15);">
+    <div class="as-block-hd">⚡ How Auto Save Works</div>
+    <div class="as-block-bd">
+      <div style="display:flex;flex-direction:column;gap:0.7rem;">
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          <div style="width:24px;height:24px;border-radius:50%;background:rgba(0,200,80,0.15);border:1px solid rgba(0,200,80,0.3);display:flex;align-items:center;justify-content:center;font-family:'Orbitron',sans-serif;font-size:0.65rem;color:var(--green);flex-shrink:0;">1</div>
+          <p style="font-size:0.85rem;color:var(--white2);">Bot receives message from <strong>unknown number</strong> (not in contacts)</p>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          <div style="width:24px;height:24px;border-radius:50%;background:rgba(0,200,80,0.15);border:1px solid rgba(0,200,80,0.3);display:flex;align-items:center;justify-content:center;font-family:'Orbitron',sans-serif;font-size:0.65rem;color:var(--green);flex-shrink:0;">2</div>
+          <p style="font-size:0.85rem;color:var(--white2);">Bot sends automatic <strong>Sinhala welcome reply</strong> to the sender</p>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          <div style="width:24px;height:24px;border-radius:50%;background:rgba(0,200,80,0.15);border:1px solid rgba(0,200,80,0.3);display:flex;align-items:center;justify-content:center;font-family:'Orbitron',sans-serif;font-size:0.65rem;color:var(--green);flex-shrink:0;">3</div>
+          <p style="font-size:0.85rem;color:var(--white2);">Message is <strong>saved to Firebase</strong> and shown in this inbox</p>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          <div style="width:24px;height:24px;border-radius:50%;background:rgba(0,200,80,0.15);border:1px solid rgba(0,200,80,0.3);display:flex;align-items:center;justify-content:center;font-family:'Orbitron',sans-serif;font-size:0.65rem;color:var(--green);flex-shrink:0;">4</div>
+          <p style="font-size:0.85rem;color:var(--white2);">Email notification sent to your configured email address</p>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          <div style="width:24px;height:24px;border-radius:50%;background:rgba(0,200,80,0.15);border:1px solid rgba(0,200,80,0.3);display:flex;align-items:center;justify-content:center;font-family:'Orbitron',sans-serif;font-size:0.65rem;color:var(--green);flex-shrink:0;">5</div>
+          <p style="font-size:0.85rem;color:var(--white2);">Owner also gets <strong>WhatsApp notification</strong> about the new message</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INBOX -->
+  <div class="as-block anim-up d3">
+    <div class="as-block-hd">
+      📩 Unknown Number Inbox
+      <button style="margin-left:auto;background:transparent;border:1px solid rgba(232,0,29,0.2);color:var(--red);padding:0.2rem 0.6rem;border-radius:6px;font-size:0.72rem;font-weight:700;cursor:pointer;" onclick="addDemoMsg()">+ Demo</button>
+    </div>
+    <div class="as-block-bd">
+      <input class="inbox-search" id="inboxSearch" placeholder="🔍 Search by name or number..." oninput="renderInbox()"/>
+      <div class="filter-tabs">
+        <button class="ft active" onclick="setFilter('all',this)">All</button>
+        <button class="ft" onclick="setFilter('unread',this)">Unread</button>
+        <button class="ft" onclick="setFilter('today',this)">Today</button>
+      </div>
+      <div id="inboxList"></div>
+    </div>
+  </div>
+
+  <button class="btn btn-full anim-up" style="background:rgba(255,0,0,0.07);border:1px solid rgba(255,0,0,0.2);color:var(--red);" onclick="clearInbox()">🗑 Clear All Messages</button>
+
+</div>
+</div>
+
+<footer id="footer"></footer>
+<script src="../js/app.js"></script>
+<script>
+let messages = [];
+let currentFilter = 'all';
+
+function loadMessages() {
+  try { messages = JSON.parse(localStorage.getItem('rq_inbox') || '[]'); } catch { messages = []; }
+  renderStats(); renderInbox();
+}
+
+function saveMessages() { localStorage.setItem('rq_inbox', JSON.stringify(messages)); }
+
+function renderStats() {
+  const today = new Date().toDateString();
+  const unread = messages.filter(m => !m.read).length;
+  const todayMsgs = messages.filter(m => new Date(m.time).toDateString() === today).length;
+  const unique = new Set(messages.map(m => m.number)).size;
+  document.getElementById('totalSaved').textContent = messages.length;
+  document.getElementById('unreadCount').textContent = unread;
+  document.getElementById('todayCount').textContent = todayMsgs;
+  document.getElementById('uniqueNums').textContent = unique;
+}
+
+function renderInbox() {
+  const q = document.getElementById('inboxSearch').value.toLowerCase();
+  const today = new Date().toDateString();
+  let filtered = messages.filter(m => {
+    if (currentFilter === 'unread' && m.read) return false;
+    if (currentFilter === 'today' && new Date(m.time).toDateString() !== today) return false;
+    if (q && !m.name.toLowerCase().includes(q) && !m.number.includes(q) && !m.message.toLowerCase().includes(q)) return false;
+    return true;
+  }).sort((a,b) => b.time - a.time);
+
+  const list = document.getElementById('inboxList');
+  if (!filtered.length) {
+    list.innerHTML = `<div class="empty-inbox"><div class="empty-ico">📩</div><div class="empty-txt">No messages found.</div></div>`;
+    return;
+  }
+  list.innerHTML = filtered.map(m => {
+    const initials = m.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    const timeStr = new Date(m.time).toLocaleString('en-US',{hour:'2-digit',minute:'2-digit',month:'short',day:'numeric'});
+    return `
+      <div class="inbox-item ${m.read?'':'unread'}" id="msg-${m.id}">
+        <div class="ib-top">
+          <div class="ib-avatar">${initials}</div>
+          <div class="ib-name">${escHtml(m.name)}</div>
+          <div class="ib-time">${timeStr}</div>
+        </div>
+        <div class="ib-num">+${m.number}</div>
+        <div class="ib-msg">${escHtml(m.message)}</div>
+        <div class="ib-actions">
+          <button class="ib-btn ib-reply" onclick="replyToMsg('${m.number}')">💬 Reply</button>
+          <button class="ib-btn ib-del" onclick="markRead('${m.id}')">✓ Read</button>
+          <button class="ib-btn ib-del" onclick="deleteMsg('${m.id}')">✕ Delete</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.ft').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderInbox();
+}
+
+function replyToMsg(number) {
+  window.open(`https://wa.me/${number}`, '_blank');
+}
+
+function markRead(id) {
+  const m = messages.find(x => x.id === id);
+  if (m) { m.read = true; saveMessages(); renderStats(); renderInbox(); }
+}
+
+function deleteMsg(id) {
+  messages = messages.filter(x => x.id !== id);
+  saveMessages(); renderStats(); renderInbox();
+  showToast('🗑 Message deleted.', 'info');
+}
+
+function clearInbox() {
+  if (!confirm('Clear all saved messages?')) return;
+  messages = []; saveMessages(); renderStats(); renderInbox();
+  showToast('✅ Inbox cleared.', 'info');
+}
+
+function addDemoMsg() {
+  const names = ['Kasun Perera','Nimesha Silva','Dilshan Fernando','Thilini Rathnayake','Ruwan Jayasinghe'];
+  const msgs = ['Hello, I need help with the bot','What is the price?','How do I connect?','Can you help me?','I want to know more'];
+  const m = {
+    id: Date.now().toString(),
+    name: names[Math.floor(Math.random()*names.length)],
+    number: '94' + Math.floor(700000000+Math.random()*99999999),
+    message: msgs[Math.floor(Math.random()*msgs.length)],
+    time: Date.now(), read: false
+  };
+  messages.unshift(m);
+  saveMessages(); renderStats(); renderInbox();
+  showToast('📩 Demo message added!', 'success');
+  // Simulate email notification
+  const email = document.getElementById('notifEmail').value;
+  if (email) showToast(`📧 Email sent to ${email}!`, 'success');
+}
+
+function onEmailChange() {
+  const email = document.getElementById('notifEmail').value.trim();
+  const status = document.getElementById('emailStatus');
+  const txt = document.getElementById('emailStatusTxt');
+  if (email && email.includes('@')) {
+    status.className = 'email-status connected';
+    txt.textContent = `Notifications → ${email}`;
+  } else {
+    status.className = 'email-status disconnected';
+    txt.textContent = 'Not configured — enter email below';
+  }
+}
+
+function saveEmailSettings() {
+  const email = document.getElementById('notifEmail').value.trim();
+  if (!email || !email.includes('@')) return showToast('❌ Enter a valid email!', 'error');
+  localStorage.setItem('rq_notif_email', email);
+  localStorage.setItem('rq_notif_newnum', document.getElementById('notifNewNum').checked);
+  localStorage.setItem('rq_notif_known', document.getElementById('notifKnown').checked);
+  localStorage.setItem('rq_notif_daily', document.getElementById('notifDaily').checked);
+  showToast('✅ Email settings saved!', 'success');
+  onEmailChange();
+}
+
+function toggleSave() {
+  const on = document.getElementById('asToggle').checked;
+  document.getElementById('asLabel').textContent = on ? 'ACTIVE' : 'INACTIVE';
+  document.getElementById('asLabel').style.color = on ? 'var(--green)' : 'var(--white3)';
+  rqSettings.set('autoSave', on);
+  showToast(on ? '✅ Auto Save enabled!' : '⏹ Auto Save paused', on?'success':'info');
+}
+
+function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadMessages();
+  const email = localStorage.getItem('rq_notif_email') || '';
+  if (email) { document.getElementById('notifEmail').value = email; onEmailChange(); }
+  ['notifNewNum','notifKnown','notifDaily'].forEach(id => {
+    const val = localStorage.getItem('rq_' + id.replace('notif','notif_').toLowerCase());
+    if (val !== null) document.getElementById(id).checked = val === 'true';
+  });
+  const asOn = rqSettings.getKey('autoSave', true);
+  document.getElementById('asToggle').checked = asOn;
+  document.getElementById('asLabel').textContent = asOn ? 'ACTIVE' : 'INACTIVE';
+  document.getElementById('asLabel').style.color = asOn ? 'var(--green)' : 'var(--white3)';
+});
+</script>
+</body>
+</html>

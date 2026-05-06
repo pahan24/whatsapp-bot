@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>RED QUEEN MD — Deploy Bot</title>
+<link rel="stylesheet" href="../css/global.css"/>
+<style>
+.create-page{padding:1.5rem 1.2rem 5rem;max-width:520px;margin:0 auto;}
+.create-title{font-family:'Orbitron',sans-serif;font-size:1.5rem;font-weight:900;color:var(--red);text-align:center;margin-bottom:0.3rem;}
+.create-sub{text-align:center;color:var(--white3);font-size:0.75rem;letter-spacing:2px;font-family:'Share Tech Mono',monospace;margin-bottom:2rem;}
+
+/* method cards */
+.method-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;}
+.method-card{
+  background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);
+  border-radius:16px;padding:1.5rem 1rem;text-align:center;
+  cursor:pointer;transition:all 0.25s;
+}
+.method-card.active{background:rgba(232,0,29,0.1);border-color:rgba(232,0,29,0.4);}
+.method-card:hover:not(.active){border-color:rgba(255,255,255,0.2);}
+.method-icon{font-size:2rem;margin-bottom:0.6rem;}
+.method-title{font-family:'Orbitron',sans-serif;font-size:0.75rem;font-weight:700;color:var(--white);}
+
+/* phone pair section */
+.pair-section{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:1.5rem;margin-bottom:1rem;}
+
+/* code display */
+.code-display{
+  background:rgba(10,3,3,0.9);border:1px solid rgba(232,0,29,0.25);
+  border-radius:16px;padding:2rem;text-align:center;margin-top:1rem;
+  display:none;
+}
+.code-display.show{display:block;animation:fadeUp 0.4s ease;}
+.code-label{font-family:'Share Tech Mono',monospace;font-size:0.7rem;letter-spacing:3px;color:var(--red);margin-bottom:1rem;}
+.code-digits{display:flex;align-items:center;justify-content:center;gap:0.4rem;margin-bottom:1.2rem;flex-wrap:wrap;}
+.code-digit{
+  width:44px;height:56px;background:rgba(255,255,255,0.05);
+  border:1px solid rgba(232,0,29,0.3);border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Orbitron',sans-serif;font-size:1.4rem;font-weight:900;
+  box-shadow:0 0 15px rgba(232,0,29,0.1);
+}
+.code-sep{color:var(--white4);font-size:1.2rem;padding:0 2px;}
+.code-timer-bar{width:100%;height:4px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden;margin-bottom:0.5rem;}
+.code-timer-fill{height:100%;background:var(--red);border-radius:4px;transition:width 1s linear;box-shadow:0 0 8px rgba(232,0,29,0.6);}
+.code-timer-txt{font-family:'Share Tech Mono',monospace;font-size:0.75rem;color:var(--white4);margin-bottom:1rem;}
+.code-actions{display:flex;gap:0.7rem;justify-content:center;}
+
+/* QR section */
+.qr-section{text-align:center;padding:1rem 0;}
+.qr-frame{
+  width:200px;height:200px;margin:0 auto;
+  background:rgba(255,255,255,0.95);border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;
+}
+.qr-frame img{width:100%;height:100%;object-fit:cover;}
+.qr-corners-wrap{position:absolute;inset:0;pointer-events:none;}
+.qrc{position:absolute;width:20px;height:20px;border-color:var(--red);border-style:solid;}
+.qrc.tl{top:-1px;left:-1px;border-width:3px 0 0 3px;}
+.qrc.tr{top:-1px;right:-1px;border-width:3px 3px 0 0;}
+.qrc.bl{bottom:-1px;left:-1px;border-width:0 0 3px 3px;}
+.qrc.br{bottom:-1px;right:-1px;border-width:0 3px 3px 0;}
+.qr-note{color:var(--white3);font-size:0.82rem;margin-top:1rem;line-height:1.6;}
+
+/* steps */
+.steps{display:flex;flex-direction:column;gap:0;}
+.step-item{display:flex;gap:1rem;padding:1rem 0;border-bottom:1px solid rgba(255,255,255,0.04);}
+.step-item:last-child{border:none;}
+.step-n-wrap{display:flex;flex-direction:column;align-items:center;}
+.step-n{width:32px;height:32px;border-radius:50%;background:rgba(232,0,29,0.12);border:1px solid rgba(232,0,29,0.3);display:flex;align-items:center;justify-content:center;font-family:'Orbitron',sans-serif;font-size:0.72rem;font-weight:900;color:var(--red);flex-shrink:0;}
+.step-line{flex:1;width:1px;background:rgba(255,255,255,0.06);margin-top:4px;}
+.step-item:last-child .step-line{display:none;}
+.step-txt h4{font-weight:700;font-size:0.9rem;margin-bottom:0.2rem;}
+.step-txt p{color:var(--white3);font-size:0.82rem;line-height:1.5;}
+.step-txt code{color:var(--red);font-family:'Share Tech Mono',monospace;font-size:0.78rem;}
+
+/* connection status */
+.conn-card{
+  background:rgba(0,200,80,0.07);border:1px solid rgba(0,200,80,0.2);
+  border-radius:14px;padding:1.2rem;display:flex;align-items:center;gap:12px;
+  margin-bottom:1rem;
+}
+.conn-dot{width:12px;height:12px;border-radius:50%;background:var(--green);box-shadow:0 0 12px var(--green);animation:blink 1.5s infinite;flex-shrink:0;}
+.conn-txt h4{font-weight:700;color:var(--green);}
+.conn-txt p{font-size:0.8rem;color:var(--white3);}
+
+/* welcome msg preview */
+.msg-preview{
+  background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);
+  border-radius:16px;padding:1.2rem;margin-bottom:1rem;
+}
+.msg-preview-hd{font-size:0.75rem;letter-spacing:2px;color:var(--white4);font-family:'Share Tech Mono',monospace;margin-bottom:0.8rem;}
+.msg-bubble{
+  background:rgba(232,0,29,0.08);border-left:3px solid var(--red);
+  border-radius:0 10px 10px 0;padding:0.9rem 1rem;
+  font-size:0.85rem;line-height:1.7;color:var(--white2);
+  white-space:pre-line;
+}
+
+/* cc select */
+.phone-row{display:flex;gap:0.5rem;}
+.cc-sel{
+  width:80px;flex-shrink:0;background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.1);border-radius:10px;
+  padding:0.85rem 0.5rem;color:var(--white);outline:none;cursor:pointer;
+  font-size:0.85rem;font-family:'Share Tech Mono',monospace;
+}
+.cc-sel:focus{border-color:var(--red);}
+.cc-sel option{background:var(--black3);}
+</style>
+</head>
+<body>
+<canvas id="particle-canvas"></canvas>
+<div class="bg-radial"></div>
+<nav id="navbar"></nav>
+
+<div class="page-wrap">
+<div class="create-page">
+  <div class="create-title anim-up">DEPLOY BOT</div>
+  <div class="create-sub anim-up d1">CONNECT YOUR WHATSAPP TO RED QUEEN MD</div>
+
+  <!-- connected state (if already paired) -->
+  <div class="conn-card anim-up" id="connCard" style="display:none;">
+    <div class="conn-dot"></div>
+    <div class="conn-txt">
+      <h4>BOT CONNECTED ✓</h4>
+      <p id="connNum">Number: —</p>
+    </div>
+  </div>
+
+  <!-- welcome msg preview -->
+  <div class="msg-preview anim-up d1">
+    <div class="msg-preview-hd">📩 BOT WELCOME MESSAGE (Sinhala)</div>
+    <div class="msg-bubble">🤖 *RED QUEEN MD* සම්බන්ධ විය!
+
+✅ ඔබේ Bot සාර්ථකව සම්බන්ධ කර ඇත.
+
+📋 Commands:
+🔧 .menu — සියලු commands
+💰 .coins — Coin ශේෂය
+🔑 .getpass — Login password
+📊 .ping — Bot status
+🎭 .react — Channel react
+
+> *RED QUEEN MD* සේවය භාවිත කිරීම ගැන ස්තූතියි! 🎉</div>
+  </div>
+
+  <!-- method selector -->
+  <div class="method-grid anim-up d2">
+    <div class="method-card active" id="mPhone" onclick="switchMethod('phone')">
+      <div class="method-icon">📱</div>
+      <div class="method-title">PHONE NUMBER</div>
+    </div>
+    <div class="method-card" id="mQr" onclick="switchMethod('qr')">
+      <div class="method-icon">📷</div>
+      <div class="method-title">QR CODE</div>
+    </div>
+  </div>
+
+  <!-- PHONE METHOD -->
+  <div id="phoneSection" class="pair-section anim-up d2">
+    <div class="form-group">
+      <label class="form-label">WHATSAPP NUMBER</label>
+      <div class="phone-row">
+        <select class="cc-sel" id="ccSel">
+          <option value="94">🇱🇰 +94</option>
+          <option value="91">🇮🇳 +91</option>
+          <option value="1">🇺🇸 +1</option>
+          <option value="44">🇬🇧 +44</option>
+          <option value="60">🇲🇾 +60</option>
+          <option value="65">🇸🇬 +65</option>
+          <option value="966">🇸🇦 +966</option>
+          <option value="971">🇦🇪 +971</option>
+          <option value="234">🇳🇬 +234</option>
+          <option value="27">🇿🇦 +27</option>
+        </select>
+        <input class="form-input" id="pairNum" type="tel" placeholder="771234567" style="flex:1;"/>
+      </div>
+    </div>
+    <button class="btn btn-red btn-full" id="pairBtn" onclick="generateCode()">🔗 GENERATE PAIRING CODE</button>
+    <div id="pairErr" style="display:none;color:var(--red);font-size:0.82rem;margin-top:0.6rem;text-align:center;"></div>
+
+    <div class="code-display" id="codeDisplay">
+      <div class="code-label">YOUR 8-DIGIT PAIRING CODE</div>
+      <div class="code-timer-bar"><div class="code-timer-fill" id="timerFill"></div></div>
+      <div class="code-timer-txt" id="timerTxt">Expires in 60s</div>
+      <div class="code-digits" id="codeDigits"></div>
+      <div class="code-actions">
+        <button class="btn btn-grey btn-sm" onclick="copyCode()">📋 Copy</button>
+        <button class="btn btn-grey btn-sm" onclick="generateCode()">🔄 Refresh</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- QR METHOD -->
+  <div id="qrSection" class="pair-section anim-up d2" style="display:none;">
+    <div class="qr-section">
+      <div class="qr-frame" id="qrFrame">
+        <div style="color:#999;font-size:0.8rem;text-align:center;padding:1rem;">Start bot server<br/>to see QR code</div>
+        <div class="qr-corners-wrap">
+          <div class="qrc tl"></div><div class="qrc tr"></div>
+          <div class="qrc bl"></div><div class="qrc br"></div>
+        </div>
+      </div>
+      <p class="qr-note">Open WhatsApp → Settings → Linked Devices<br/>→ Link a Device → Scan QR Code</p>
+      <button class="btn btn-grey btn-sm" style="margin-top:0.8rem;" onclick="refreshQR()">🔄 Refresh QR</button>
+    </div>
+  </div>
+
+  <!-- HOW TO STEPS -->
+  <div class="pair-section anim-up d3" style="margin-top:1rem;">
+    <div style="font-family:'Orbitron',sans-serif;font-size:0.82rem;font-weight:700;margin-bottom:1rem;">HOW TO PAIR</div>
+    <div class="steps">
+      <div class="step-item">
+        <div class="step-n-wrap"><div class="step-n">1</div><div class="step-line"></div></div>
+        <div class="step-txt"><h4>Enter Your Number</h4><p>Select country code and enter your WhatsApp number without leading zero.</p></div>
+      </div>
+      <div class="step-item">
+        <div class="step-n-wrap"><div class="step-n">2</div><div class="step-line"></div></div>
+        <div class="step-txt"><h4>Generate Code</h4><p>Click Generate — you'll get an 8-digit code valid for <code>60 seconds</code>.</p></div>
+      </div>
+      <div class="step-item">
+        <div class="step-n-wrap"><div class="step-n">3</div><div class="step-line"></div></div>
+        <div class="step-txt"><h4>Open WhatsApp</h4><p>Go to <code>Settings → Linked Devices → Link with phone number</code>.</p></div>
+      </div>
+      <div class="step-item">
+        <div class="step-n-wrap"><div class="step-n">4</div><div class="step-line"></div></div>
+        <div class="step-txt"><h4>Enter Code</h4><p>Type the 8-digit code. Bot connects & sends Sinhala welcome message!</p></div>
+      </div>
+      <div class="step-item">
+        <div class="step-n-wrap"><div class="step-n">5</div><div class="step-line"></div></div>
+        <div class="step-txt"><h4>Bot is Live! 🎉</h4><p>Type <code>.menu</code> to see all commands. Type <code>.getpass</code> for your login password.</p></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<footer id="footer"></footer>
+<script src="../js/app.js"></script>
+<script>
+let rawCode = '', timerInterval;
+
+function switchMethod(m) {
+  document.getElementById('phoneSection').style.display = m==='phone' ? 'block' : 'none';
+  document.getElementById('qrSection').style.display = m==='qr' ? 'block' : 'none';
+  document.getElementById('mPhone').classList.toggle('active', m==='phone');
+  document.getElementById('mQr').classList.toggle('active', m==='qr');
+}
+
+async function generateCode() {
+  const cc = document.getElementById('ccSel').value;
+  const num = document.getElementById('pairNum').value.replace(/\D/g,'');
+  const err = document.getElementById('pairErr');
+  err.style.display='none';
+  if (!num || num.length < 7) { err.style.display='block'; err.textContent='❌ Please enter a valid number.'; return; }
+  const btn = document.getElementById('pairBtn');
+  btn.disabled=true; btn.textContent='Generating...';
+  try {
+    const res = await fetch(`/code?number=${cc}${num}`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    rawCode = data.code;
+    renderCode(data.code);
+    startTimer(60);
+    // Save connection
+    localStorage.setItem('rq_connected_num', cc+num);
+    updateConnCard(cc+num);
+  } catch(e) {
+    // Demo mode - generate fake code
+    const fakeCode = Math.random().toString(36).substring(2,10).toUpperCase();
+    rawCode = fakeCode;
+    renderCode(fakeCode);
+    startTimer(60);
+    err.style.display='block';
+    err.style.color='var(--gold)';
+    err.textContent='⚠ Demo mode — connect bot server for real pairing.';
+  } finally {
+    btn.disabled=false; btn.textContent='🔗 GENERATE PAIRING CODE';
+  }
+}
+
+function renderCode(code) {
+  const clean = code.replace(/-/g,'').toUpperCase().padEnd(8,'0').slice(0,8);
+  const wrap = document.getElementById('codeDigits');
+  wrap.innerHTML = '';
+  [...clean].forEach((ch,i) => {
+    if (i===4) wrap.insertAdjacentHTML('beforeend','<div class="code-sep">—</div>');
+    wrap.insertAdjacentHTML('beforeend',`<div class="code-digit">${ch}</div>`);
+  });
+  document.getElementById('codeDisplay').classList.add('show');
+}
+
+function startTimer(secs) {
+  clearInterval(timerInterval);
+  let t = secs;
+  const fill = document.getElementById('timerFill');
+  const txt = document.getElementById('timerTxt');
+  fill.style.width='100%';
+  timerInterval = setInterval(() => {
+    t--;
+    fill.style.width=(t/secs*100)+'%';
+    if (t>0) txt.textContent=`Expires in ${t}s`;
+    else { clearInterval(timerInterval); txt.textContent='❌ Expired — generate a new code'; fill.style.background='#333'; }
+  },1000);
+}
+
+function copyCode() {
+  navigator.clipboard.writeText(rawCode.replace(/-/g,''));
+  showToast('✅ Code copied!', 'success');
+}
+
+function refreshQR() {
+  const f = document.getElementById('qrFrame');
+  f.innerHTML = `<div style="color:var(--red);font-size:0.82rem;">Refreshing...</div><div class="qr-corners-wrap"><div class="qrc tl"></div><div class="qrc tr"></div><div class="qrc bl"></div><div class="qrc br"></div></div>`;
+  setTimeout(() => {
+    f.innerHTML = `<div style="color:#999;font-size:0.8rem;text-align:center;padding:1rem;">Start bot server<br/>to see QR code</div><div class="qr-corners-wrap"><div class="qrc tl"></div><div class="qrc tr"></div><div class="qrc bl"></div><div class="qrc br"></div></div>`;
+  },1500);
+}
+
+function updateConnCard(num) {
+  const cc = document.getElementById('connCard');
+  const cn = document.getElementById('connNum');
+  cc.style.display='flex';
+  cn.textContent='Number: +'+num;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const saved = localStorage.getItem('rq_connected_num');
+  if (saved) updateConnCard(saved);
+  document.getElementById('pairNum').addEventListener('keydown', e => { if(e.key==='Enter') generateCode(); });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>RED QUEEN MD — WhatsApp Bot</title>
+<link rel="stylesheet" href="css/global.css"/>
+<style>
+.hero{
+  min-height:100vh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:5rem 1.5rem 2rem;text-align:center;
+  position:relative;z-index:1;
+}
+.hero-title{
+  font-family:'Orbitron',sans-serif;
+  font-size:clamp(2.5rem,11vw,5.5rem);
+  font-weight:900;line-height:1.0;
+  color:var(--white);text-transform:uppercase;
+  margin-bottom:0;
+}
+.hero-title .red-line{
+  color:var(--red);
+  text-shadow:0 0 50px rgba(232,0,29,0.5);
+  display:block;
+}
+.hero-title .period{color:var(--red);}
+
+.hero-desc{
+  font-family:'Share Tech Mono',monospace;
+  font-size:clamp(0.82rem,3.5vw,1rem);
+  color:var(--white2);line-height:1.8;
+  max-width:370px;margin:2rem auto 2.5rem;
+}
+
+.hero-btns{
+  display:flex;flex-direction:column;gap:0.85rem;
+  width:100%;max-width:400px;margin:0 auto;
+}
+.hbtn{
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  width:100%;padding:1.05rem 1.5rem;border-radius:10px;
+  font-family:'Orbitron',sans-serif;font-size:0.85rem;font-weight:700;
+  letter-spacing:1.5px;text-transform:uppercase;
+  cursor:pointer;transition:all 0.28s;border:none;text-decoration:none;
+}
+.hbtn-red{
+  background:var(--red);color:var(--white);
+  box-shadow:0 4px 28px rgba(232,0,29,0.45);
+}
+.hbtn-red:hover{box-shadow:0 8px 40px rgba(232,0,29,0.65);transform:translateY(-2px);}
+.hbtn-dark{
+  background:rgba(18,18,18,0.9);color:var(--white);
+  border:1px solid rgba(255,255,255,0.1);
+}
+.hbtn-dark:hover{background:rgba(35,35,35,0.95);}
+
+.mascot-wrap{margin-top:3.5rem;text-align:center;}
+.mascot{
+  font-size:5.5rem;display:inline-block;
+  animation:floatM 3s ease-in-out infinite;
+  filter:drop-shadow(0 0 18px rgba(232,0,29,0.25));
+}
+@keyframes floatM{0%,100%{transform:translateY(0);}50%{transform:translateY(-14px);}}
+
+/* ─── FEATURES ─── */
+.section{padding:5rem 1.5rem;position:relative;z-index:1;}
+.feat-grid{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:1rem;max-width:500px;margin:2.5rem auto 0;
+}
+.feat{
+  background:rgba(18,4,4,0.85);border:1px solid rgba(232,0,29,0.14);
+  border-radius:16px;padding:1.4rem 1rem;text-align:center;
+  transition:all 0.3s;
+}
+.feat:hover{border-color:rgba(232,0,29,0.35);transform:translateY(-4px);box-shadow:0 14px 40px rgba(0,0,0,0.45);}
+.feat-ico{font-size:1.8rem;margin-bottom:0.7rem;}
+.feat-name{font-family:'Orbitron',sans-serif;font-size:0.68rem;font-weight:700;color:var(--white);letter-spacing:0.5px;margin-bottom:0.4rem;}
+.feat-txt{font-size:0.78rem;color:var(--white3);line-height:1.5;}
+
+/* ─── MINI BOT BAND ─── */
+.mb-band{
+  background:rgba(12,3,3,0.75);border:1px solid rgba(232,0,29,0.14);
+  border-radius:20px;padding:2rem 1.5rem;max-width:460px;margin:0 auto;text-align:center;
+}
+.mb-band h2{font-family:'Orbitron',sans-serif;font-size:1.2rem;font-weight:900;margin-bottom:0.7rem;}
+.mb-band h2 .gold{color:var(--gold);}
+.mb-band p{color:var(--white3);font-size:0.84rem;line-height:1.7;margin-bottom:1.5rem;}
+.mb-quick{display:flex;flex-direction:column;gap:0.6rem;}
+.qb{
+  display:flex;align-items:center;gap:10px;
+  padding:0.85rem 1.1rem;border-radius:12px;
+  font-weight:700;font-size:0.88rem;cursor:pointer;
+  transition:all 0.2s;text-decoration:none;border:none;
+}
+.qb-red{background:var(--red);color:var(--white);justify-content:center;font-family:'Orbitron',sans-serif;letter-spacing:1px;box-shadow:0 4px 20px rgba(232,0,29,0.35);}
+.qb-dark{background:rgba(255,255,255,0.05);color:var(--white);border:1px solid rgba(255,255,255,0.1);}
+.qb-green{background:rgba(0,200,80,0.08);color:var(--green);border:1px solid rgba(0,200,80,0.22);}
+.qb-blue{background:rgba(0,123,255,0.08);color:#5b9dff;border:1px solid rgba(0,123,255,0.22);}
+.qb-gold{background:rgba(245,166,35,0.08);color:var(--gold);border:1px solid rgba(245,166,35,0.22);}
+.qb:hover{filter:brightness(1.2);transform:translateX(4px);}
+.qb-red:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(232,0,29,0.5);}
+.qb-arr{margin-left:auto;opacity:0.4;}
+
+/* ─── CHANNEL ─── */
+.ch-band{
+  background:linear-gradient(135deg,rgba(245,166,35,0.07),rgba(232,0,29,0.04));
+  border:1px solid rgba(245,166,35,0.2);border-radius:20px;
+  padding:2rem 1.5rem;text-align:center;max-width:460px;margin:0 auto;
+}
+.ch-band h3{font-family:'Orbitron',sans-serif;font-size:1rem;font-weight:900;color:var(--gold);margin-bottom:0.5rem;}
+.ch-band p{color:var(--white3);font-size:0.84rem;line-height:1.6;margin-bottom:1.2rem;}
+
+/* ─── FOOTER ─── */
+.site-footer{
+  position:relative;z-index:1;
+  background:rgba(5,5,5,0.97);border-top:1px solid rgba(232,0,29,0.1);
+  padding:2.5rem 1.5rem 2rem;text-align:center;
+}
+.f-logo{font-family:'Orbitron',sans-serif;font-size:1.15rem;font-weight:900;margin-bottom:1rem;}
+.f-logo span{color:var(--red);}
+.f-links{display:flex;justify-content:center;flex-wrap:wrap;gap:0.4rem 1.2rem;margin-bottom:1rem;}
+.f-links a{color:var(--white4);font-size:0.8rem;transition:color 0.2s;}
+.f-links a:hover{color:var(--red);}
+.f-copy{font-family:'Share Tech Mono',monospace;font-size:0.72rem;color:var(--white4);}
+</style>
+</head>
+<body>
+<canvas id="particle-canvas"></canvas>
+<div class="bg-radial"></div>
+<nav id="navbar"></nav>
+
+<div class="page-wrap">
+
+  <!-- HERO -->
+  <section class="hero">
+    <h1 class="hero-title anim-up">
+      ELEVATE YOUR<br/>
+      CHATS<span class="period">.</span><br/>
+      DISCOVER THE<br/>
+      ULTIMATE<br/>
+      <span class="red-line">WHATSAPP<br/>BOT<span class="period">.</span></span>
+    </h1>
+
+    <p class="hero-desc anim-up d2">
+      Secure, Fast, and Professional.<br/>
+      Your gateway to WhatsApp<br/>
+      Automation starts here with Red<br/>
+      Queen MD.
+    </p>
+
+    <div class="hero-btns anim-up d3">
+      <a href="minibot/index.html" class="hbtn hbtn-red">🚀 GET MINI BOT ACCESS</a>
+      <a href="#features" class="hbtn hbtn-dark">🔍 LEARN MORE</a>
+    </div>
+
+    <div class="mascot-wrap anim-up d4">
+      <span class="mascot">🐸</span>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="section" id="features">
+    <div style="text-align:center;">
+      <div class="sec-label">Why Choose Us</div>
+      <h2 class="sec-title">Key <span class="red">Features</span></h2>
+    </div>
+    <div class="feat-grid">
+      <div class="feat anim-up"><div class="feat-ico">🛡️</div><div class="feat-name">Anti System</div><div class="feat-txt">Anti delete, link, bad words protection.</div></div>
+      <div class="feat anim-up d1"><div class="feat-ico">↩</div><div class="feat-name">Auto Reply</div><div class="feat-txt">Keyword triggers with text, image, sticker.</div></div>
+      <div class="feat anim-up d2"><div class="feat-ico">💰</div><div class="feat-name">Coin System</div><div class="feat-txt">Daily claims & channel react rewards.</div></div>
+      <div class="feat anim-up d3"><div class="feat-ico">📡</div><div class="feat-name">Channel React</div><div class="feat-txt">Bot auto-reacts to earn coins.</div></div>
+      <div class="feat anim-up d2"><div class="feat-ico">🌐</div><div class="feat-name">Multi Language</div><div class="feat-txt">English, Sinhala & Arabic.</div></div>
+      <div class="feat anim-up d3"><div class="feat-ico">🤖</div><div class="feat-name">AI Reply</div><div class="feat-txt">Smart AI replies for groups & inbox.</div></div>
+    </div>
+  </section>
+
+  <!-- MINI BOT -->
+  <section class="section" style="padding-top:0;">
+    <div class="mb-band anim-up">
+      <div style="font-size:2.2rem;margin-bottom:0.8rem;">🤖</div>
+      <h2>THE <span class="gold">MINI BOT</span> EDITION</h2>
+      <p>Fast, Secure, and Simplified WhatsApp Automation. Experience the best features with minimal setup.</p>
+      <div class="mb-quick">
+        <a href="minibot/create.html" class="qb qb-red">🔗 DEPLOY NOW</a>
+        <a href="minibot/setting.html" class="qb qb-dark"><span>⚙</span> Settings<span class="qb-arr">›</span></a>
+        <a href="minibot/autosave.html" class="qb qb-green"><span>💾</span> Auto Save<span class="qb-arr">›</span></a>
+        <a href="minibot/autoreply.html" class="qb qb-blue"><span>🤖</span> Auto Reply<span class="qb-arr">›</span></a>
+        <a href="minibot/coin.html" class="qb qb-gold"><span>💰</span> Coin System<span class="qb-arr">›</span></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- CHANNEL -->
+  <section class="section" style="padding-top:0;">
+    <div class="ch-band anim-up">
+      <h3>💬 Join Our WhatsApp Channel</h3>
+      <p>Stay updated with the latest features, updates and news from the RED QUEEN MD team.</p>
+      <a href="https://whatsapp.com/channel/0029Vb7ChKeAojYnYh1uMo3q" target="_blank" class="btn btn-gold btn-full">Join Channel</a>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    <div class="f-logo"><span>RED</span> QUEEN MD</div>
+    <div class="f-links">
+      <a href="index.html">Home</a>
+      <a href="minibot/index.html">Mini Bot</a>
+      <a href="minibot/create.html">Main Bot</a>
+      <a href="about.html">About Us</a>
+      <a href="contact.html">Contact</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="channel.html">Channel</a>
+    </div>
+    <div class="f-copy">© 2025 RED QUEEN TEAM — All rights reserved</div>
+  </footer>
+
+</div>
+<script src="js/app.js"></script>
+</body>
+</html>

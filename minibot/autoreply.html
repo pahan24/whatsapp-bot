@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>RED QUEEN MD — Auto Reply</title>
+<link rel="stylesheet" href="../css/global.css"/>
+<style>
+.ar-page{padding:1.5rem 1.2rem 6rem;max-width:540px;margin:0 auto;}
+
+.ar-header{
+  display:flex;align-items:flex-start;justify-content:space-between;
+  margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;
+}
+.ar-title{font-family:'Orbitron',sans-serif;font-size:1.5rem;font-weight:900;line-height:1.2;}
+.active-row{display:flex;align-items:center;gap:0.7rem;margin-top:0.3rem;}
+.active-label{font-weight:700;font-size:0.9rem;color:var(--white2);}
+
+.ar-meta{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;}
+.ar-count{font-family:'Share Tech Mono',monospace;font-size:0.82rem;color:var(--white4);}
+.btn-new{display:flex;align-items:center;gap:6px;padding:0.6rem 1.2rem;border-radius:10px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.13);color:var(--white);font-weight:700;font-size:0.85rem;cursor:pointer;transition:all 0.2s;}
+.btn-new:hover{background:rgba(255,255,255,0.12);}
+
+/* ── REPLY CARD ── */
+.reply-card{
+  background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);
+  border-radius:14px;margin-bottom:0.8rem;overflow:hidden;
+  transition:border-color 0.2s;
+}
+.reply-card:hover{border-color:rgba(232,0,29,0.25);}
+.reply-card-hd{
+  display:flex;align-items:center;gap:8px;
+  padding:0.8rem 1rem;border-bottom:1px solid rgba(255,255,255,0.05);
+}
+.reply-card-body{padding:0.8rem 1rem;}
+.reply-kw{font-weight:700;font-size:1rem;color:var(--white);margin-bottom:0.2rem;}
+.reply-preview{font-size:0.85rem;color:var(--white3);line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+.reply-img{width:100%;border-radius:8px;max-height:140px;object-fit:cover;margin-top:0.6rem;}
+.reply-actions{display:flex;gap:0.5rem;margin-left:auto;}
+.reply-act{
+  width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,0.05);
+  border:none;color:var(--white3);font-size:0.9rem;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:all 0.2s;
+}
+.reply-act.del:hover{background:rgba(232,0,29,0.15);color:var(--red);}
+.reply-act.edit:hover{background:rgba(255,255,255,0.1);color:var(--white);}
+
+/* ── NEW REPLY FORM ── */
+.form-overlay{
+  position:fixed;inset:0;z-index:500;
+  background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);
+  display:none;align-items:flex-end;
+}
+.form-overlay.open{display:flex;}
+.reply-form{
+  width:100%;max-height:92vh;overflow-y:auto;
+  background:rgba(12,3,3,0.98);border:1px solid rgba(232,0,29,0.2);
+  border-radius:20px 20px 0 0;padding:1.5rem 1.2rem 2rem;
+  animation:slideUp 0.35s ease;
+}
+@keyframes slideUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
+.form-drag{width:40px;height:4px;background:rgba(255,255,255,0.15);border-radius:4px;margin:0 auto 1.2rem;}
+
+/* type tabs */
+.type-tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:0.5rem;margin-bottom:1.2rem;}
+.type-tab{
+  padding:0.65rem 0.4rem;text-align:center;border-radius:10px;
+  background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);
+  font-size:0.78rem;font-weight:700;cursor:pointer;transition:all 0.2s;
+  display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--white3);
+}
+.type-tab .ti{font-size:1.1rem;}
+.type-tab.active{background:rgba(232,0,29,0.15);border-color:var(--red);color:var(--white);}
+.type-tab.active .ti{filter:none;}
+
+.img-upload{
+  width:100%;border:2px dashed rgba(232,0,29,0.3);border-radius:12px;
+  padding:2rem;text-align:center;cursor:pointer;transition:all 0.2s;
+  background:rgba(255,255,255,0.02);margin-bottom:0.8rem;
+  display:none;
+}
+.img-upload:hover{border-color:var(--red);}
+.img-preview{width:100%;border-radius:12px;max-height:180px;object-fit:cover;margin-bottom:0.8rem;display:none;}
+
+.form-btns{display:grid;grid-template-columns:1fr 1.5fr;gap:0.7rem;margin-top:1rem;}
+.btn-cancel{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);color:var(--white);padding:0.9rem;border-radius:12px;font-weight:700;cursor:pointer;}
+.btn-save{background:var(--red);border:none;color:var(--white);padding:0.9rem;border-radius:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 4px 20px rgba(232,0,29,0.3);}
+
+/* empty state */
+.empty-ar{text-align:center;padding:4rem 1rem;color:var(--white4);}
+.empty-ar .ei{font-size:3rem;margin-bottom:1rem;opacity:0.4;}
+</style>
+</head>
+<body>
+<canvas id="particle-canvas"></canvas>
+<div class="bg-radial"></div>
+<nav id="navbar"></nav>
+
+<div class="page-wrap">
+<div class="ar-page">
+
+  <div class="ar-header anim-up">
+    <div>
+      <div class="ar-title">AUTO REPLY<br/>MANAGER</div>
+    </div>
+    <div class="active-row">
+      <label class="toggle">
+        <input type="checkbox" id="arActive" checked onchange="toggleActive()"/>
+        <div class="toggle-track"></div>
+      </label>
+      <span class="active-label" id="activeLabel">ACTIVE</span>
+    </div>
+  </div>
+
+  <div class="ar-meta anim-up d1">
+    <span class="ar-count" id="arCount">0/10 REPLIES</span>
+    <button class="btn-new" onclick="openForm()">+ NEW REPLY</button>
+  </div>
+
+  <div id="replyList"></div>
+
+</div>
+</div>
+
+<!-- NEW REPLY FORM -->
+<div class="form-overlay" id="formOverlay">
+  <div class="reply-form">
+    <div class="form-drag"></div>
+    <div style="font-family:'Orbitron',sans-serif;font-size:1rem;font-weight:900;margin-bottom:1rem;" id="formHeading">NEW AUTO REPLY</div>
+
+    <div class="type-tabs">
+      <div class="type-tab active" data-type="TEXT" onclick="selectType(this)"><span class="ti">A</span>Text</div>
+      <div class="type-tab" data-type="IMAGE" onclick="selectType(this)"><span class="ti">🖼</span>Image</div>
+      <div class="type-tab" data-type="TEXT_IMAGE" onclick="selectType(this)"><span class="ti">🖼</span>Txt+Img</div>
+      <div class="type-tab" data-type="STICKER" onclick="selectType(this)"><span class="ti">🎭</span>Sticker</div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">KEYWORD</label>
+      <input class="form-input" id="fKw" placeholder="Auto reply trigger word"/>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">MESSAGE</label>
+      <textarea class="form-textarea" id="fMsg" placeholder="Type your message..."></textarea>
+    </div>
+
+    <label class="img-upload" id="imgUpload" for="imgFileInput">
+      📷 Tap to upload image
+      <input type="file" id="imgFileInput" accept="image/*" style="display:none" onchange="handleImgUpload(event)"/>
+    </label>
+    <img id="imgPreview" class="img-preview" alt="Preview"/>
+
+    <input type="hidden" id="editId" value=""/>
+
+    <div class="form-btns">
+      <button class="btn-cancel" onclick="closeForm()">CANCEL</button>
+      <button class="btn-save" onclick="saveReply()">💾 SAVE REPLY</button>
+    </div>
+  </div>
+</div>
+
+<script src="../js/app.js"></script>
+<script>
+let currentType = 'TEXT';
+let uploadedImg = null;
+let editingId = null;
+
+function renderReplies() {
+  const replies = rqReplies.get();
+  const list = document.getElementById('replyList');
+  document.getElementById('arCount').textContent = `${replies.length}/10 REPLIES`;
+  if (!replies.length) {
+    list.innerHTML = `<div class="empty-ar"><div class="ei">↩</div><p>No auto replies yet.<br/>Tap + NEW REPLY to create one.</p></div>`;
+    return;
+  }
+  list.innerHTML = replies.map(r => {
+    let badgeClass = 'badge-text', badgeLabel = 'TEXT';
+    if (r.type === 'IMAGE') { badgeClass = 'badge-img'; badgeLabel = 'IMAGE'; }
+    if (r.type === 'TEXT_IMAGE') { badgeClass = 'badge-txtimg'; badgeLabel = 'TEXT_IMAGE'; }
+    if (r.type === 'STICKER') { badgeClass = 'badge-sticker'; badgeLabel = 'STICKER'; }
+    return `
+      <div class="reply-card anim-up">
+        <div class="reply-card-hd">
+          <span class="badge ${badgeClass}">${badgeLabel}</span>
+          <div class="reply-actions">
+            <button class="reply-act edit" onclick="editReply('${r.id}')">✏</button>
+            <button class="reply-act del" onclick="deleteReply('${r.id}')">🗑</button>
+          </div>
+        </div>
+        <div class="reply-card-body">
+          <div class="reply-kw">${escHtml(r.keyword)}</div>
+          ${r.message ? `<div class="reply-preview">${escHtml(r.message)}</div>` : ''}
+          ${r.image ? `<img class="reply-img" src="${r.image}" alt=""/>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function openForm(reset=true) {
+  if (reset) {
+    editingId = null;
+    document.getElementById('fKw').value='';
+    document.getElementById('fMsg').value='';
+    document.getElementById('editId').value='';
+    document.getElementById('formHeading').textContent='NEW AUTO REPLY';
+    uploadedImg = null;
+    document.getElementById('imgPreview').style.display='none';
+    document.getElementById('imgPreview').src='';
+    selectTypeByName('TEXT');
+  }
+  document.getElementById('formOverlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+
+function closeForm() {
+  document.getElementById('formOverlay').classList.remove('open');
+  document.body.style.overflow='';
+}
+
+function selectType(el) {
+  document.querySelectorAll('.type-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  currentType = el.dataset.type;
+  const showImg = currentType === 'IMAGE' || currentType === 'TEXT_IMAGE' || currentType === 'STICKER';
+  document.getElementById('imgUpload').style.display = showImg ? 'block' : 'none';
+  const showMsg = currentType !== 'IMAGE' && currentType !== 'STICKER';
+  document.getElementById('fMsg').style.display = showMsg ? 'block' : 'none';
+}
+
+function selectTypeByName(name) {
+  const el = document.querySelector(`.type-tab[data-type="${name}"]`);
+  if (el) selectType(el);
+}
+
+function handleImgUpload(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    uploadedImg = ev.target.result;
+    const prev = document.getElementById('imgPreview');
+    prev.src = uploadedImg; prev.style.display = 'block';
+    document.getElementById('imgUpload').style.display='none';
+  };
+  reader.readAsDataURL(file);
+}
+
+function saveReply() {
+  const kw = document.getElementById('fKw').value.trim();
+  const msg = document.getElementById('fMsg').value.trim();
+  if (!kw) return showToast('❌ Keyword is required!', 'error');
+  if (!msg && !uploadedImg) return showToast('❌ Message or image required!', 'error');
+  const replies = rqReplies.get();
+  if (!editingId && replies.length >= 10) return showToast('❌ Max 10 replies reached!', 'error');
+
+  const rule = { keyword: kw, message: msg, type: currentType, image: uploadedImg };
+  if (editingId) {
+    rqReplies.update(editingId, rule);
+    showToast('✅ Reply updated!', 'success');
+  } else {
+    rqReplies.add(rule);
+    showToast('✅ Reply saved!', 'success');
+  }
+  closeForm(); renderReplies();
+}
+
+function editReply(id) {
+  const r = rqReplies.get().find(x => x.id===id); if (!r) return;
+  editingId = id;
+  document.getElementById('fKw').value = r.keyword;
+  document.getElementById('fMsg').value = r.message || '';
+  document.getElementById('editId').value = id;
+  document.getElementById('formHeading').textContent = 'EDIT AUTO REPLY';
+  selectTypeByName(r.type);
+  uploadedImg = r.image || null;
+  if (r.image) {
+    document.getElementById('imgPreview').src=r.image;
+    document.getElementById('imgPreview').style.display='block';
+    document.getElementById('imgUpload').style.display='none';
+  }
+  openForm(false);
+}
+
+function deleteReply(id) {
+  if (!confirm('Delete this auto reply?')) return;
+  rqReplies.delete(id);
+  renderReplies();
+  showToast('🗑 Deleted!', 'info');
+}
+
+function toggleActive() {
+  const active = document.getElementById('arActive').checked;
+  document.getElementById('activeLabel').textContent = active ? 'ACTIVE' : 'INACTIVE';
+  rqSettings.set('autoReplyActive', active);
+  showToast(active ? '✅ Auto Reply activated!' : '⏹ Auto Reply paused', active ? 'success' : 'info');
+}
+
+function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+document.addEventListener('DOMContentLoaded', () => {
+  renderReplies();
+  const active = rqSettings.getKey('autoReplyActive', true);
+  document.getElementById('arActive').checked = active;
+  document.getElementById('activeLabel').textContent = active ? 'ACTIVE' : 'INACTIVE';
+  selectTypeByName('TEXT');
+});
+</script>
+</body>
+</html>
