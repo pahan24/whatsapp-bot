@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>RED QUEEN MD — Deploy Bot</title>
+<title>SASA MD — Deploy Bot</title>
 <link rel="stylesheet" href="../css/global.css"/>
 <style>
 .create-page{padding:1.5rem 1.2rem 5rem;max-width:520px;margin:0 auto;}
@@ -119,7 +119,7 @@
 <div class="page-wrap">
 <div class="create-page">
   <div class="create-title anim-up">DEPLOY BOT</div>
-  <div class="create-sub anim-up d1">CONNECT YOUR WHATSAPP TO RED QUEEN MD</div>
+  <div class="create-sub anim-up d1">CONNECT YOUR WHATSAPP TO SASA MD</div>
 
   <!-- connected state (if already paired) -->
   <div class="conn-card anim-up" id="connCard" style="display:none;">
@@ -133,7 +133,7 @@
   <!-- welcome msg preview -->
   <div class="msg-preview anim-up d1">
     <div class="msg-preview-hd">📩 BOT WELCOME MESSAGE (Sinhala)</div>
-    <div class="msg-bubble">🤖 *RED QUEEN MD* සම්බන්ධ විය!
+    <div class="msg-bubble">🤖 *SASA MD* සම්බන්ධ විය!
 
 ✅ ඔබේ Bot සාර්ථකව සම්බන්ධ කර ඇත.
 
@@ -144,7 +144,7 @@
 📊 .ping — Bot status
 🎭 .react — Channel react
 
-> *RED QUEEN MD* සේවය භාවිත කිරීම ගැන ස්තූතියි! 🎉</div>
+> *SASA MD* සේවය භාවිත කිරීම ගැන ස්තූතියි! 🎉</div>
   </div>
 
   <!-- method selector -->
@@ -267,7 +267,7 @@ async function generateCode() {
     renderCode(data.code);
     startTimer(60);
     // Save connection
-    localStorage.setItem('rq_connected_num', cc+num);
+    localStorage.setItem('sasa_connected_num', cc+num);
     updateConnCard(cc+num);
   } catch(e) {
     // Demo mode - generate fake code
@@ -329,7 +329,7 @@ function updateConnCard(num) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  const saved = localStorage.getItem('rq_connected_num');
+  const saved = localStorage.getItem('sasa_connected_num');
   if (saved) updateConnCard(saved);
   document.getElementById('pairNum').addEventListener('keydown', e => { if(e.key==='Enter') generateCode(); });
 });

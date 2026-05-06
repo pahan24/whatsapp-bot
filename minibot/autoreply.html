@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>RED QUEEN MD — Auto Reply</title>
+<title>SASA MD — Auto Reply</title>
 <link rel="stylesheet" href="../css/global.css"/>
 <style>
 .ar-page{padding:1.5rem 1.2rem 6rem;max-width:540px;margin:0 auto;}
@@ -167,7 +167,7 @@ let uploadedImg = null;
 let editingId = null;
 
 function renderReplies() {
-  const replies = rqReplies.get();
+  const replies = sasaReplies.get();
   const list = document.getElementById('replyList');
   document.getElementById('arCount').textContent = `${replies.length}/10 REPLIES`;
   if (!replies.length) {
@@ -250,22 +250,22 @@ function saveReply() {
   const msg = document.getElementById('fMsg').value.trim();
   if (!kw) return showToast('❌ Keyword is required!', 'error');
   if (!msg && !uploadedImg) return showToast('❌ Message or image required!', 'error');
-  const replies = rqReplies.get();
+  const replies = sasaReplies.get();
   if (!editingId && replies.length >= 10) return showToast('❌ Max 10 replies reached!', 'error');
 
   const rule = { keyword: kw, message: msg, type: currentType, image: uploadedImg };
   if (editingId) {
-    rqReplies.update(editingId, rule);
+    sasaReplies.update(editingId, rule);
     showToast('✅ Reply updated!', 'success');
   } else {
-    rqReplies.add(rule);
+    sasaReplies.add(rule);
     showToast('✅ Reply saved!', 'success');
   }
   closeForm(); renderReplies();
 }
 
 function editReply(id) {
-  const r = rqReplies.get().find(x => x.id===id); if (!r) return;
+  const r = sasaReplies.get().find(x => x.id===id); if (!r) return;
   editingId = id;
   document.getElementById('fKw').value = r.keyword;
   document.getElementById('fMsg').value = r.message || '';
@@ -283,7 +283,7 @@ function editReply(id) {
 
 function deleteReply(id) {
   if (!confirm('Delete this auto reply?')) return;
-  rqReplies.delete(id);
+  sasaReplies.delete(id);
   renderReplies();
   showToast('🗑 Deleted!', 'info');
 }
@@ -291,7 +291,7 @@ function deleteReply(id) {
 function toggleActive() {
   const active = document.getElementById('arActive').checked;
   document.getElementById('activeLabel').textContent = active ? 'ACTIVE' : 'INACTIVE';
-  rqSettings.set('autoReplyActive', active);
+  sasaSettings.set('autoReplyActive', active);
   showToast(active ? '✅ Auto Reply activated!' : '⏹ Auto Reply paused', active ? 'success' : 'info');
 }
 
@@ -299,7 +299,7 @@ function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'
 
 document.addEventListener('DOMContentLoaded', () => {
   renderReplies();
-  const active = rqSettings.getKey('autoReplyActive', true);
+  const active = sasaSettings.getKey('autoReplyActive', true);
   document.getElementById('arActive').checked = active;
   document.getElementById('activeLabel').textContent = active ? 'ACTIVE' : 'INACTIVE';
   selectTypeByName('TEXT');

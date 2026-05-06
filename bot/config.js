@@ -1,7 +1,7 @@
 require('dotenv').config();
 
 module.exports = {
-  botName: process.env.BOT_NAME || 'RED QUEEN MD',
+  botName: process.env.BOT_NAME || 'SASA MD',
   prefix: process.env.PREFIX || '.',
   ownerNumber: process.env.OWNER_NUMBER || '94727114552',
   ownerName: process.env.OWNER_NAME || 'PAHAN',
@@ -9,7 +9,7 @@ module.exports = {
   totalCommands: 93,
   activeBots: 3650,
   channelLink: 'https://whatsapp.com/channel/0029Vb7ChKeAojYnYh1uMo3q',
-  sessionId: process.env.SESSION_ID || 'redqueen_session',
+  sessionId: process.env.SESSION_ID || 'sasabot_session',
   pairPort: parseInt(process.env.PAIR_PORT) || 3000,
   autoRead: process.env.AUTO_READ !== 'false',
   autoTyping: process.env.AUTO_TYPING !== 'false',
@@ -37,7 +37,7 @@ module.exports = {
 
 👋 *ආයුබෝවන් ${name}!*
 
-ඔබ RED QUEEN MD Bot එකට message කර ඇත.
+ඔබ SASA MD Bot එකට message කර ඇත.
 
 🤖 *Bot Info:*
 • Owner: PAHAN
@@ -47,5 +47,5 @@ module.exports = {
 wa.me/94727114552
 
 ✅ *ඔබේ message save කර ඇත!*
-> _Powered by RED QUEEN MD_`,
+> _Powered by SASA MD_`,
 };

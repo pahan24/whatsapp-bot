@@ -82,7 +82,7 @@ const startBot = async () => {
       keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'silent' })),
     },
     printQRInTerminal: true,
-    browser: ['RED QUEEN MD', 'Chrome', '5.2.0'],
+    browser: ['SASA MD', 'Chrome', '5.2.0'],
     generateHighQualityLinkPreview: true,
   });
 
@@ -95,7 +95,7 @@ const startBot = async () => {
       console.log('🔴 Connection closed. Reconnect:', shouldReconnect);
       if (shouldReconnect) setTimeout(startBot, 3000);
     } else if (connection === 'open') {
-      console.log(`\n✅ RED QUEEN MD v${config.version} — Connected!`);
+      console.log(`\n✅ SASA MD v${config.version} — Connected!`);
       console.log(`👑 Owner: ${config.ownerNumber}\n`);
       // Send Sinhala connect message with web password
       await sendConnectMessage(sock);

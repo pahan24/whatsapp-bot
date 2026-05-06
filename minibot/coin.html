@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>RED QUEEN MD — Coin Wallet</title>
+<title>SASA MD — Coin Wallet</title>
 <link rel="stylesheet" href="../css/global.css"/>
 <style>
 /* ── LOGIN ── */
@@ -207,7 +207,7 @@
 
     <div class="ch-react-row">
       <div class="ch-react-info">
-        <span class="ch-react-name">🔴 RED QUEEN MD Channel</span>
+        <span class="ch-react-name">🔴 SASA MD Channel</span>
         <span class="ch-react-earn" id="rqReactStatus">Tap to react → +2 coins</span>
       </div>
       <button class="btn btn-gold btn-sm" id="rqReactBtn" onclick="reactToChannel('rq')">REACT</button>
@@ -269,9 +269,9 @@ function coinLogin() {
   const num = document.getElementById('coinNum').value.trim();
   const pass = document.getElementById('coinPass').value.trim();
   const err = document.getElementById('coinLoginErr');
-  const result = rqAuth.login(num, pass);
+  const result = sasaAuth.login(num, pass);
   if (result.ok) {
-    coinNum = rqAuth.getNumber();
+    coinNum = sasaAuth.getNumber();
     showWallet();
   } else {
     err.style.display='block';
@@ -280,7 +280,7 @@ function coinLogin() {
 }
 
 function showWallet() {
-  coinNum = rqAuth.getNumber();
+  coinNum = sasaAuth.getNumber();
   document.getElementById('loginView').style.display='none';
   document.getElementById('walletView').style.display='block';
   document.getElementById('footer').style.display='block';
@@ -293,7 +293,7 @@ function showWallet() {
 }
 
 function updateBalance() {
-  const data = rqCoins.get(coinNum);
+  const data = sasaCoins.get(coinNum);
   document.getElementById('balNum').textContent = data.balance;
   document.getElementById('totalSpent').textContent = data.spent || 0;
   document.getElementById('balUpdated').textContent = 'Last updated: ' + new Date().toLocaleTimeString();
@@ -306,7 +306,7 @@ function refreshBalance() {
 }
 
 function checkBonuses() {
-  const data = rqCoins.get(coinNum);
+  const data = sasaCoins.get(coinNum);
   // welcome
   if (data.claimedWelcome) {
     document.getElementById('welcomeBtn').textContent='✓ Already Claimed';
@@ -329,10 +329,10 @@ function checkBonuses() {
 }
 
 function claimWelcome() {
-  const data = rqCoins.get(coinNum);
+  const data = sasaCoins.get(coinNum);
   if (data.claimedWelcome) return;
   data.claimedWelcome = true; data.balance += 50;
-  rqCoins.save(coinNum, data);
+  sasaCoins.save(coinNum, data);
   updateBalance();
   document.getElementById('welcomeBtn').textContent='✓ Claimed! +50 coins';
   document.getElementById('welcomeBtn').disabled=true;
@@ -341,11 +341,11 @@ function claimWelcome() {
 }
 
 function claimDaily() {
-  const data = rqCoins.get(coinNum);
+  const data = sasaCoins.get(coinNum);
   const today = new Date().toDateString();
   if (data.claimedDaily === today) return showToast('❌ Already claimed today!', 'error');
   data.claimedDaily = today; data.balance += 5;
-  rqCoins.save(coinNum, data);
+  sasaCoins.save(coinNum, data);
   updateBalance();
   document.getElementById('dailyBtn').textContent='✓ Claimed! Come back tomorrow';
   document.getElementById('dailyBtn').disabled=true;
@@ -354,10 +354,10 @@ function claimDaily() {
 }
 
 function claimFree() {
-  const data = rqCoins.get(coinNum);
+  const data = sasaCoins.get(coinNum);
   if (data.claimedFree) return;
   data.claimedFree = true; data.balance += 25;
-  rqCoins.save(coinNum, data);
+  sasaCoins.save(coinNum, data);
   updateBalance();
   document.getElementById('freeBtn').textContent='✓ Claimed! +25 coins';
   document.getElementById('freeBtn').disabled=true;
@@ -366,13 +366,13 @@ function claimFree() {
 }
 
 function reactToChannel(ch) {
-  const data = rqCoins.get(coinNum);
+  const data = sasaCoins.get(coinNum);
   const todayKey = 'react_' + ch + '_' + new Date().toDateString();
   if (localStorage.getItem(todayKey)) { showToast('✅ Already reacted today!', 'info'); return; }
   // Open channel
   window.open('https://whatsapp.com/channel/0029Vb7ChKeAojYnYh1uMo3q', '_blank');
   localStorage.setItem(todayKey, '1');
-  data.balance += 2; rqCoins.save(coinNum, data);
+  data.balance += 2; sasaCoins.save(coinNum, data);
   updateBalance();
   document.getElementById('rqReactStatus').textContent = '✅ Reacted! +2 coins earned';
   document.getElementById('rqReactStatus').style.color = 'var(--green)';
@@ -384,7 +384,7 @@ function reactToChannel(ch) {
 
 function toggleAutoReact() {
   const on = document.getElementById('autoReactToggle').checked;
-  rqSettings.set('autoReactChannels', on);
+  sasaSettings.set('autoReactChannels', on);
   if (on) {
     showToast('🤖 Auto react enabled! Bot will react to channels for coins.', 'success');
     document.getElementById('autoReactStatus').textContent = '🟢 Active — earning coins automatically';
@@ -398,14 +398,14 @@ function toggleAutoReact() {
 }
 
 function simulateAutoReact() {
-  const data = rqCoins.get(coinNum);
+  const data = sasaCoins.get(coinNum);
   const reactsDone = parseInt(localStorage.getItem('reactsDone_' + new Date().toDateString()) || '0');
   if (reactsDone < 50) {
     let count = reactsDone;
     const iv = setInterval(() => {
-      if (!rqSettings.getKey('autoReactChannels', false)) { clearInterval(iv); return; }
+      if (!sasaSettings.getKey('autoReactChannels', false)) { clearInterval(iv); return; }
       count++; data.balance += 1;
-      rqCoins.save(coinNum, data);
+      sasaCoins.save(coinNum, data);
       localStorage.setItem('reactsDone_' + new Date().toDateString(), count);
       updateBalance(); updateReactCount();
       if (count >= 50) clearInterval(iv);
@@ -421,14 +421,14 @@ function updateReactCount() {
 
 function loadReactStatus() {
   updateReactCount();
-  const todayKey = 'react_rq_' + new Date().toDateString();
+  const todayKey = 'react_sasa_' + new Date().toDateString();
   if (localStorage.getItem(todayKey)) {
     document.getElementById('rqReactStatus').textContent = '✅ Reacted today';
     document.getElementById('rqReactStatus').style.color = 'var(--green)';
     document.getElementById('rqReactBtn').textContent = '✓ DONE';
     document.getElementById('rqReactBtn').disabled = true;
   }
-  const autoOn = rqSettings.getKey('autoReactChannels', false);
+  const autoOn = sasaSettings.getKey('autoReactChannels', false);
   document.getElementById('autoReactToggle').checked = autoOn;
   if (autoOn) {
     document.getElementById('autoReactStatus').textContent = '🟢 Active — earning coins';
@@ -437,7 +437,7 @@ function loadReactStatus() {
 }
 
 function coinLogout() {
-  rqAuth.logout();
+  sasaAuth.logout();
   document.getElementById('walletView').style.display='none';
   document.getElementById('loginView').style.display='block';
   document.getElementById('footer').style.display='none';
@@ -445,7 +445,7 @@ function coinLogout() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  if (rqAuth.isLoggedIn()) { showWallet(); }
+  if (sasaAuth.isLoggedIn()) { showWallet(); }
   else { document.getElementById('loginView').style.display='block'; }
   document.getElementById('coinPass')?.addEventListener('keydown', e => { if(e.key==='Enter') coinLogin(); });
 });

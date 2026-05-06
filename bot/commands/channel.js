@@ -2,14 +2,14 @@ const { getChannelList, addChannel, removeChannel, logChannelReact, getCoins, up
 const config = require('../config');
 
 // ══════════════════════════════════════════════
-//   RED QUEEN MD — Channel React System
+//   SASA MD — Channel React System
 //   Bot auto-reacts to channels & earns coins
 // ══════════════════════════════════════════════
 
 const COINS_PER_REACT = 2;
 const OWNER_CHANNEL = {
   link: config.channelLink,
-  name: 'RED QUEEN MD Official',
+  name: 'SASA MD Official',
   id: '0029Vb7ChKeAojYnYh1uMo3q',
 };
 

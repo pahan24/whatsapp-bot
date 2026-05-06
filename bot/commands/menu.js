@@ -1,7 +1,7 @@
 const config = require('../config');
 
 // ══════════════════════════════════════════════
-//   RED QUEEN MD — Menu System
+//   SASA MD — Menu System
 // ══════════════════════════════════════════════
 
 const MENUS = {

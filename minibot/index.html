@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>RED QUEEN MD — Mini Bot</title>
+<title>SASA MD — Mini Bot</title>
 <link rel="stylesheet" href="../css/global.css"/>
 <style>
 .mb-hero{
@@ -111,19 +111,19 @@
   </div>
 
   <footer>
-    <div class="footer-logo"><span>RED</span> QUEEN MD</div>
-    <p>© 2025 RED QUEEN TEAM</p>
+    <div class="footer-logo"><span>SASA</span> MD</div>
+    <p>© 2025 SASA MD TEAM</p>
   </footer>
 </div>
 
 <script src="../js/app.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-  if (rqAuth.isLoggedIn()) {
+  if (sasaAuth.isLoggedIn()) {
     const sc = document.getElementById('statusCard');
     const sn = document.getElementById('statusNum');
     sc.style.display = 'flex';
-    const num = rqAuth.getNumber();
+    const num = sasaAuth.getNumber();
     sn.textContent = 'Logged in as: ' + num;
   }
 });

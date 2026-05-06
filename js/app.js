@@ -1,5 +1,5 @@
 // ══════════════════════════════════════
-//   RED QUEEN MD — Shared JS v2
+//   SASA MD — Shared JS v2
 // ══════════════════════════════════════
 
 // ── PARTICLES ──────────────────────────
@@ -91,8 +91,8 @@ function buildNav() {
     <a href="${prefix}index.html" class="nav-logo" style="display:flex;align-items:center;gap:8px;text-decoration:none;">
       ${LOGO_SVG}
       <span style="font-family:'Orbitron',sans-serif;font-size:1.05rem;font-weight:900;letter-spacing:1px;">
-        <span class="red" style="color:#e8001d;">RED</span>
-        <span class="white" style="color:#fff;"> QUEEN MD</span>
+        <span class="red" style="color:#e8001d;">SASA</span>
+        <span class="white" style="color:#fff;"> MD</span>
       </span>
     </a>
     <div style="display:flex;align-items:center;gap:0.7rem;">
@@ -120,7 +120,7 @@ function buildNav() {
       <div style="display:flex;align-items:center;gap:8px;">
         ${LOGO_SVG}
         <span style="font-family:'Orbitron',sans-serif;font-size:0.95rem;font-weight:900;">
-          <span style="color:#e8001d;">RED</span><span style="color:#fff;"> QUEEN MD</span>
+          <span style="color:#e8001d;">SASA</span><span style="color:#fff;"> MD</span>
         </span>
       </div>
       <button class="drawer-close" onclick="closeDrawer()" style="width:36px;height:36px;background:rgba(232,0,29,0.15);border:none;border-radius:8px;color:#fff;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
@@ -137,14 +137,14 @@ function buildNav() {
           </a>`;
       }).join('')}
     </div>
-    <div class="drawer-footer">© 2025 RED QUEEN TEAM</div>
+    <div class="drawer-footer">© 2025 SASA MD TEAM</div>
   `;
 
   document.body.appendChild(overlay);
   document.body.appendChild(drawer);
 
   // Show active nav status if logged in
-  if (rqAuth.isLoggedIn()) {
+  if (sasaAuth.isLoggedIn()) {
     const ns = document.getElementById('navStatus');
     if (ns) ns.style.display = 'flex';
   }
@@ -167,7 +167,7 @@ function closeDrawer() {
 }
 
 // ── AUTH ───────────────────────────────
-const rqAuth = {
+const sasaAuth = {
   OWNER_NUMBER: '94727114552',
   CHANNEL_LINK: 'https://whatsapp.com/channel/0029Vb7ChKeAojYnYh1uMo3q',
 
@@ -186,29 +186,29 @@ const rqAuth = {
     const clean = number.replace(/\D/g, '');
     const expected = this.generatePassword(clean);
     const isOwner = clean === '727114552' || clean === '94727114552';
-    const masterPass = isOwner && password.toUpperCase() === 'RQMASTER';
+    const masterPass = isOwner && password.toUpperCase() === 'SASAMASTER';
     if (password.toUpperCase() === expected || masterPass) {
-      sessionStorage.setItem('rq_session', JSON.stringify({ number: clean, time: Date.now() }));
-      localStorage.setItem('rq_session', JSON.stringify({ number: clean, time: Date.now() }));
+      sessionStorage.setItem('sasa_session', JSON.stringify({ number: clean, time: Date.now() }));
+      localStorage.setItem('sasa_session', JSON.stringify({ number: clean, time: Date.now() }));
       return { ok: true };
     }
     return { ok: false, msg: `❌ Invalid credentials.\n\nSend *${password.startsWith('.') ? password : '.getpass'}* to bot on WhatsApp to get your password.` };
   },
 
   logout() {
-    sessionStorage.removeItem('rq_session');
-    localStorage.removeItem('rq_session');
+    sessionStorage.removeItem('sasa_session');
+    localStorage.removeItem('sasa_session');
   },
 
   isLoggedIn() {
-    const s = localStorage.getItem('rq_session') || sessionStorage.getItem('rq_session');
+    const s = localStorage.getItem('sasa_session') || sessionStorage.getItem('sasa_session');
     if (!s) return false;
     const d = JSON.parse(s);
     return (Date.now() - d.time) < 86400000 * 7;
   },
 
   getNumber() {
-    const s = localStorage.getItem('rq_session') || sessionStorage.getItem('rq_session');
+    const s = localStorage.getItem('sasa_session') || sessionStorage.getItem('sasa_session');
     return s ? JSON.parse(s).number : null;
   },
 
@@ -219,15 +219,15 @@ const rqAuth = {
 };
 
 // ── SETTINGS ───────────────────────────
-const rqSettings = {
-  get() { try { return JSON.parse(localStorage.getItem('rq_settings') || '{}'); } catch { return {}; } },
-  set(k, v) { const s = this.get(); s[k] = v; localStorage.setItem('rq_settings', JSON.stringify(s)); },
+const sasaSettings = {
+  get() { try { return JSON.parse(localStorage.getItem('sasa_settings') || '{}'); } catch { return {}; } },
+  set(k, v) { const s = this.get(); s[k] = v; localStorage.setItem('sasa_settings', JSON.stringify(s)); },
   getKey(k, def = null) { return this.get()[k] ?? def; }
 };
 
 // ── COINS ──────────────────────────────
-const rqCoins = {
-  key: (num) => `rq_coin_${num || rqAuth.getNumber()}`,
+const sasaCoins = {
+  key: (num) => `sasa_coin_${num || sasaAuth.getNumber()}`,
   get(number) {
     try { return JSON.parse(localStorage.getItem(this.key(number)) || 'null') || { balance: 0, spent: 0, claimedDaily: null, claimedWelcome: false, claimedFree: false }; }
     catch { return { balance: 0, spent: 0, claimedDaily: null, claimedWelcome: false, claimedFree: false }; }
@@ -237,9 +237,9 @@ const rqCoins = {
 };
 
 // ── AUTO REPLY ─────────────────────────
-const rqReplies = {
-  get() { try { return JSON.parse(localStorage.getItem('rq_replies') || '[]'); } catch { return []; } },
-  save(arr) { localStorage.setItem('rq_replies', JSON.stringify(arr)); },
+const sasaReplies = {
+  get() { try { return JSON.parse(localStorage.getItem('sasa_replies') || '[]'); } catch { return []; } },
+  save(arr) { localStorage.setItem('sasa_replies', JSON.stringify(arr)); },
   add(rule) { const arr = this.get(); arr.unshift({ ...rule, id: Date.now().toString() }); this.save(arr); },
   delete(id) { this.save(this.get().filter(r => r.id !== id)); },
   update(id, rule) { this.save(this.get().map(r => r.id === id ? { ...r, ...rule } : r)); }
@@ -273,13 +273,13 @@ document.addEventListener('DOMContentLoaded', () => {
         <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:1rem;">
           ${LOGO_SVG}
           <span style="font-family:'Orbitron',sans-serif;font-size:1rem;font-weight:900;">
-            <span style="color:#e8001d;">RED</span><span style="color:#fff;"> QUEEN MD</span>
+            <span style="color:#e8001d;">SASA</span><span style="color:#fff;"> MD</span>
           </span>
         </div>
         <div style="display:flex;justify-content:center;flex-wrap:wrap;gap:0.4rem 1.2rem;margin-bottom:1rem;">
           ${NAV_ITEMS.map(i => `<a href="${getHref(i)}" style="color:#555;font-size:0.8rem;transition:color 0.2s;" onmouseover="this.style.color='#e8001d'" onmouseout="this.style.color='#555'">${i.label}</a>`).join('')}
         </div>
-        <p style="font-family:'Share Tech Mono',monospace;font-size:0.72rem;color:#444;">© 2025 RED QUEEN TEAM — All rights reserved</p>
+        <p style="font-family:'Share Tech Mono',monospace;font-size:0.72rem;color:#444;">© 2025 SASA MD TEAM — All rights reserved</p>
       </div>`;
   }
 });

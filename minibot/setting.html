@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>RED QUEEN MD — Settings</title>
+<title>SASA MD — Settings</title>
 <link rel="stylesheet" href="../css/global.css"/>
 <style>
 .setting-page{padding:1.5rem 1.2rem 5rem;max-width:540px;margin:0 auto;}
@@ -341,7 +341,7 @@ const optStates = {};
 function checkAccess() {
   const lock = document.getElementById('lockOverlay');
   const main = document.getElementById('mainContent');
-  if (rqAuth.isLoggedIn()) { lock.style.display='none'; main.style.display='block'; loadSettings(); }
+  if (sasaAuth.isLoggedIn()) { lock.style.display='none'; main.style.display='block'; loadSettings(); }
   else { lock.style.display='flex'; main.style.display='none'; }
 }
 
@@ -349,7 +349,7 @@ function doLogin() {
   const num = document.getElementById('lockNum').value.trim();
   const pass = document.getElementById('lockPass').value.trim();
   const err = document.getElementById('loginErr');
-  const result = rqAuth.login(num, pass);
+  const result = sasaAuth.login(num, pass);
   if (result.ok) { checkAccess(); showToast('✅ Access granted!', 'success'); }
   else { err.style.display='block'; err.textContent = result.msg || 'Invalid credentials'; }
 }
@@ -358,13 +358,13 @@ function optSel(btn, group) {
   document.querySelectorAll(`#${group} .opt-btn`).forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   optStates[group] = btn.dataset.val;
-  rqSettings.set(group, btn.dataset.val);
+  sasaSettings.set(group, btn.dataset.val);
 }
 
 function toggleLink(el) {
   el.classList.toggle('active');
   const links = [...document.querySelectorAll('.link-chip.active')].map(c => c.textContent);
-  rqSettings.set('blockedLinks', links);
+  sasaSettings.set('blockedLinks', links);
 }
 
 function addCustomLink() {
@@ -373,7 +373,7 @@ function addCustomLink() {
   customLinks.push(val);
   document.getElementById('customLink').value = '';
   renderCustomLinks();
-  rqSettings.set('customLinks', customLinks);
+  sasaSettings.set('customLinks', customLinks);
 }
 
 function renderCustomLinks() {
@@ -381,20 +381,20 @@ function renderCustomLinks() {
   if (!customLinks.length) { area.innerHTML = '<span style="color:var(--white4);font-size:0.82rem;">No items added yet</span>'; return; }
   area.innerHTML = customLinks.map((w,i) => `<div class="chip">${w}<span class="chip-x" onclick="removeCustomLink(${i})">×</span></div>`).join('');
 }
-function removeCustomLink(i) { customLinks.splice(i,1); renderCustomLinks(); rqSettings.set('customLinks', customLinks); }
+function removeCustomLink(i) { customLinks.splice(i,1); renderCustomLinks(); sasaSettings.set('customLinks', customLinks); }
 
 function addWord() {
   const val = document.getElementById('wordInput').value.trim();
   if (!val || words.length >= 100) return;
-  if (!words.includes(val)) { words.push(val); document.getElementById('wordInput').value = ''; renderWords(); rqSettings.set('blockedWords', words); }
+  if (!words.includes(val)) { words.push(val); document.getElementById('wordInput').value = ''; renderWords(); sasaSettings.set('blockedWords', words); }
 }
 function addBulkWords() {
   const bulk = document.getElementById('bulkWords').value.split(',').map(w => w.trim()).filter(Boolean);
   words = [...new Set([...words, ...bulk])].slice(0, 100);
   document.getElementById('bulkWords').value = '';
-  renderWords(); rqSettings.set('blockedWords', words);
+  renderWords(); sasaSettings.set('blockedWords', words);
 }
-function removeWord(i) { words.splice(i,1); renderWords(); rqSettings.set('blockedWords', words); }
+function removeWord(i) { words.splice(i,1); renderWords(); sasaSettings.set('blockedWords', words); }
 function renderWords() {
   const area = document.getElementById('wordChips');
   area.innerHTML = words.length ? words.map((w,i) => `<div class="chip">${w}<span class="chip-x" onclick="removeWord(${i})">×</span></div>`).join('') : '';
@@ -407,7 +407,7 @@ function handleLogo(e) {
   reader.onload = ev => {
     const prev = document.getElementById('logoPreview');
     prev.innerHTML = `<img src="${ev.target.result}" alt="Logo"/>`;
-    rqSettings.set('ownerLogo', ev.target.result);
+    sasaSettings.set('ownerLogo', ev.target.result);
   };
   reader.readAsDataURL(file);
 }
@@ -427,7 +427,7 @@ function recordVoice() {
 }
 
 function loadSettings() {
-  const s = rqSettings.get();
+  const s = sasaSettings.get();
   // toggles
   ['allowsOnline','callReject','antiLink','antiBadWords','antiBot','antiMention','statusView','statusReact','statusSave'].forEach(id => {
     const el = document.getElementById(id);
@@ -458,10 +458,10 @@ function loadSettings() {
 
 function saveAll() {
   ['allowsOnline','callReject','antiLink','antiBadWords','antiBot','antiMention','statusView','statusReact','statusSave'].forEach(id => {
-    const el = document.getElementById(id); if(el) rqSettings.set(id, el.checked);
+    const el = document.getElementById(id); if(el) sasaSettings.set(id, el.checked);
   });
   ['reactEmoji','warnCount','ownerName','ownerFrom','ownerAge','prefix'].forEach(id => {
-    const el = document.getElementById(id); if(el) rqSettings.set(id, el.value);
+    const el = document.getElementById(id); if(el) sasaSettings.set(id, el.value);
   });
   showToast('✅ Settings saved!', 'success');
 }

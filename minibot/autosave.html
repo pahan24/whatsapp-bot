@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>RED QUEEN MD — Auto Save</title>
+<title>SASA MD — Auto Save</title>
 <link rel="stylesheet" href="../css/global.css"/>
 <style>
 .as-page{padding:1.5rem 1.2rem 6rem;max-width:520px;margin:0 auto;}
@@ -214,11 +214,11 @@ let messages = [];
 let currentFilter = 'all';
 
 function loadMessages() {
-  try { messages = JSON.parse(localStorage.getItem('rq_inbox') || '[]'); } catch { messages = []; }
+  try { messages = JSON.parse(localStorage.getItem('sasa_inbox') || '[]'); } catch { messages = []; }
   renderStats(); renderInbox();
 }
 
-function saveMessages() { localStorage.setItem('rq_inbox', JSON.stringify(messages)); }
+function saveMessages() { localStorage.setItem('sasa_inbox', JSON.stringify(messages)); }
 
 function renderStats() {
   const today = new Date().toDateString();
@@ -329,10 +329,10 @@ function onEmailChange() {
 function saveEmailSettings() {
   const email = document.getElementById('notifEmail').value.trim();
   if (!email || !email.includes('@')) return showToast('❌ Enter a valid email!', 'error');
-  localStorage.setItem('rq_notif_email', email);
-  localStorage.setItem('rq_notif_newnum', document.getElementById('notifNewNum').checked);
-  localStorage.setItem('rq_notif_known', document.getElementById('notifKnown').checked);
-  localStorage.setItem('rq_notif_daily', document.getElementById('notifDaily').checked);
+  localStorage.setItem('sasa_notif_email', email);
+  localStorage.setItem('sasa_notif_newnum', document.getElementById('notifNewNum').checked);
+  localStorage.setItem('sasa_notif_known', document.getElementById('notifKnown').checked);
+  localStorage.setItem('sasa_notif_daily', document.getElementById('notifDaily').checked);
   showToast('✅ Email settings saved!', 'success');
   onEmailChange();
 }
@@ -341,7 +341,7 @@ function toggleSave() {
   const on = document.getElementById('asToggle').checked;
   document.getElementById('asLabel').textContent = on ? 'ACTIVE' : 'INACTIVE';
   document.getElementById('asLabel').style.color = on ? 'var(--green)' : 'var(--white3)';
-  rqSettings.set('autoSave', on);
+  sasaSettings.set('autoSave', on);
   showToast(on ? '✅ Auto Save enabled!' : '⏹ Auto Save paused', on?'success':'info');
 }
 
@@ -349,13 +349,13 @@ function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'
 
 document.addEventListener('DOMContentLoaded', () => {
   loadMessages();
-  const email = localStorage.getItem('rq_notif_email') || '';
+  const email = localStorage.getItem('sasa_notif_email') || '';
   if (email) { document.getElementById('notifEmail').value = email; onEmailChange(); }
   ['notifNewNum','notifKnown','notifDaily'].forEach(id => {
-    const val = localStorage.getItem('rq_' + id.replace('notif','notif_').toLowerCase());
+    const val = localStorage.getItem('sasa_' + id.replace('notif','notif_').toLowerCase());
     if (val !== null) document.getElementById(id).checked = val === 'true';
   });
-  const asOn = rqSettings.getKey('autoSave', true);
+  const asOn = sasaSettings.getKey('autoSave', true);
   document.getElementById('asToggle').checked = asOn;
   document.getElementById('asLabel').textContent = asOn ? 'ACTIVE' : 'INACTIVE';
   document.getElementById('asLabel').style.color = asOn ? 'var(--green)' : 'var(--white3)';

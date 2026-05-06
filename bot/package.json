@@ -1,7 +1,7 @@
 {
-  "name": "red-queen-md",
+  "name": "sasa-md",
   "version": "5.2.0",
-  "description": "RED QUEEN MD WhatsApp Bot",
+  "description": "SASA MD WhatsApp Bot",
   "main": "index.js",
   "type": "commonjs",
   "scripts": {

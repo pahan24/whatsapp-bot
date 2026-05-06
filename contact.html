@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>RED QUEEN MD — Contact</title>
+<title>SASA MD — Contact</title>
 <link rel="stylesheet" href="css/global.css"/>
 <style>
 .simple-page{padding:2rem 1.5rem 5rem;max-width:520px;margin:0 auto;position:relative;z-index:1;}
@@ -84,8 +84,8 @@
   </div>
 </div>
 <footer class="site-footer" style="position:relative;z-index:1;background:rgba(5,5,5,0.97);border-top:1px solid rgba(232,0,29,0.1);padding:2rem 1.5rem;text-align:center;">
-  <div style="font-family:'Orbitron',sans-serif;font-size:1rem;font-weight:900;margin-bottom:0.5rem;"><span style="color:var(--red);">RED</span> QUEEN MD</div>
-  <p style="color:var(--white4);font-size:0.75rem;font-family:'Share Tech Mono',monospace;">© 2025 RED QUEEN TEAM</p>
+  <div style="font-family:'Orbitron',sans-serif;font-size:1rem;font-weight:900;margin-bottom:0.5rem;"><span style="color:var(--red);">SASA</span> MD</div>
+  <p style="color:var(--white4);font-size:0.75rem;font-family:'Share Tech Mono',monospace;">© 2025 SASA MD TEAM</p>
 </footer>
 </div>
 <script src="js/app.js"></script>
@@ -95,7 +95,7 @@ function sendMsg() {
   const num  = document.getElementById('cNum').value.trim();
   const msg  = document.getElementById('cMsg').value.trim();
   if (!name || !msg) return showToast('❌ Please fill all fields!', 'error');
-  const waMsg = encodeURIComponent(`*Contact Form — RED QUEEN MD*\n\nName: ${name}\nNumber: ${num}\nMessage: ${msg}`);
+  const waMsg = encodeURIComponent(`*Contact Form — SASA MD*\n\nName: ${name}\nNumber: ${num}\nMessage: ${msg}`);
   window.open(`https://wa.me/94727114552?text=${waMsg}`, '_blank');
   showToast('✅ Opening WhatsApp...', 'success');
 }
