@@ -1,7 +1,7 @@
 {
   "name": "sasa-md",
   "version": "5.2.0",
-  "description": "SASA MD WhatsApp Bot",
+  "description": "SASA MD WhatsApp Bot — Full Featured",
   "main": "index.js",
   "type": "commonjs",
   "scripts": {
@@ -15,9 +15,13 @@
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "firebase-admin": "^12.1.0",
+    "fluent-ffmpeg": "^2.1.3",
+    "fs-extra": "^11.2.0",
     "pino": "^9.1.0",
     "pino-pretty": "^11.0.0",
-    "qrcode": "^1.5.3"
+    "qrcode": "^1.5.3",
+    "sharp": "^0.33.3",
+    "ytdl-core": "^4.11.5"
   },
   "devDependencies": {
     "nodemon": "^3.1.0"

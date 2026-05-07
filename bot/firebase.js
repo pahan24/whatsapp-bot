@@ -1,16 +1,16 @@
 const admin = require('firebase-admin');
 require('dotenv').config();
 
-let db;
+let db = null;
 
 const initFirebase = () => {
   try {
     if (!admin.apps.length) {
       admin.initializeApp({
         credential: admin.credential.cert({
-          projectId: process.env.FIREBASE_PROJECT_ID,
-          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-          privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+          projectId:    process.env.FIREBASE_PROJECT_ID,
+          clientEmail:  process.env.FIREBASE_CLIENT_EMAIL,
+          privateKey:   process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
         }),
         databaseURL: process.env.FIREBASE_DATABASE_URL,
       });
@@ -20,132 +20,109 @@ const initFirebase = () => {
     return db;
   } catch (err) {
     console.error('❌ Firebase error:', err.message);
-    process.exit(1);
+    // Continue without Firebase in demo mode
+    return null;
   }
 };
 
 const getDb = () => db;
 
-// ── USERS ────────────────────────────────
-const getUser = async (jid) => {
-  const snap = await db.ref(`users/${jid.replace(/[^0-9]/g, '')}`).once('value');
-  return snap.val();
+// ─── Safe DB helper ──────────────────────────────────────────
+const safeGet = async (path) => {
+  if (!db) return null;
+  try {
+    const snap = await db.ref(path).once('value');
+    return snap.val();
+  } catch { return null; }
 };
-const saveUser = async (jid, data) =>
-  db.ref(`users/${jid.replace(/[^0-9]/g, '')}`).update({ ...data, lastSeen: Date.now() });
-
-// ── UNKNOWN INBOX SAVE ───────────────────
-const saveUnknownMsg = async (jid, message, name) => {
-  const key = `inbox/${jid.replace(/[^0-9]/g, '')}/${Date.now()}`;
-  await db.ref(key).set({ jid, name, message, time: Date.now(), read: false });
+const safeSet = async (path, data) => {
+  if (!db) return;
+  try { await db.ref(path).set(data); } catch {}
 };
-const getInbox = async () => {
-  const snap = await db.ref('inbox').once('value');
-  return snap.val() || {};
+const safeUpdate = async (path, data) => {
+  if (!db) return;
+  try { await db.ref(path).update(data); } catch {}
 };
-const isKnownNumber = async (jid) => {
-  const clean = jid.replace(/[^0-9]/g, '');
-  const snap = await db.ref(`users/${clean}/firstSeen`).once('value');
-  return snap.exists();
-};
-const markFirstContact = async (jid, name) => {
-  const clean = jid.replace(/[^0-9]/g, '');
-  await db.ref(`users/${clean}`).update({ jid, name, firstSeen: Date.now(), lastSeen: Date.now() });
+const safeRemove = async (path) => {
+  if (!db) return;
+  try { await db.ref(path).remove(); } catch {}
 };
 
-// ── COINS ────────────────────────────────
-const getCoins = async (jid) => {
-  const snap = await db.ref(`coins/${jid.replace(/[^0-9]/g, '')}`).once('value');
-  return snap.val() || { balance: 0, spent: 0, claimedDaily: null, claimedWelcome: false };
-};
-const updateCoins = async (jid, data) =>
-  db.ref(`coins/${jid.replace(/[^0-9]/g, '')}`).update(data);
-const addCoins = async (jid, amount) => {
-  const data = await getCoins(jid);
-  await updateCoins(jid, { balance: (data.balance || 0) + amount });
+// ─── Users ───────────────────────────────────────────────────
+const cleanJid = (jid) => jid?.replace(/[^0-9]/g, '') || '';
+
+const getUser      = (jid) => safeGet(`users/${cleanJid(jid)}`);
+const saveUser     = (jid, data) => safeUpdate(`users/${cleanJid(jid)}`, { ...data, lastSeen: Date.now() });
+const isKnownNumber = async (jid) => !!(await safeGet(`users/${cleanJid(jid)}/firstSeen`));
+const markFirstContact = (jid, name) =>
+  safeUpdate(`users/${cleanJid(jid)}`, { jid, name, firstSeen: Date.now(), lastSeen: Date.now() });
+
+// ─── Inbox (unknown messages) ────────────────────────────────
+const saveInboxMsg = (jid, message, name) =>
+  safeSet(`inbox/${cleanJid(jid)}/${Date.now()}`, { jid, name, message, time: Date.now(), read: false });
+const getInbox = () => safeGet('inbox');
+
+// ─── Coins ───────────────────────────────────────────────────
+const getCoins = async (jid) =>
+  (await safeGet(`coins/${cleanJid(jid)}`)) || { balance: 0, spent: 0, claimedDaily: null, claimedWelcome: false };
+const updateCoins = (jid, data) => safeUpdate(`coins/${cleanJid(jid)}`, data);
+const addCoins    = async (jid, amount) => {
+  const d = await getCoins(jid);
+  await updateCoins(jid, { balance: (d.balance || 0) + amount });
 };
 
-// ── CHANNEL REACT LIST ───────────────────
-const getChannelList = async () => {
-  const snap = await db.ref('channels').once('value');
-  return snap.val() || {};
-};
-const addChannel = async (link, name) => {
+// ─── Channel Reacts ──────────────────────────────────────────
+const getChannelList  = () => safeGet('channels') || {};
+const addChannel      = (link, name) => {
   const id = link.split('/').pop();
-  await db.ref(`channels/${id}`).set({ link, name, addedAt: Date.now(), active: true });
+  return safeSet(`channels/${id}`, { link, name, id, addedAt: Date.now(), active: true });
 };
-const removeChannel = async (id) => db.ref(`channels/${id}`).remove();
-const logChannelReact = async (jid, channelId, coinsEarned) => {
-  const key = `reactions/${channelId}/${jid.replace(/[^0-9]/g, '')}/${Date.now()}`;
-  await db.ref(key).set({ jid, channelId, coinsEarned, time: Date.now() });
-  await addCoins(jid, coinsEarned);
+const removeChannel   = (id) => safeRemove(`channels/${id}`);
+const logChannelReact = async (jid, channelId, coins) => {
+  await safeSet(`reactions/${channelId}/${cleanJid(jid)}/${Date.now()}`, { jid, channelId, coins, time: Date.now() });
+  await addCoins(jid, coins);
 };
 
-// ── BAN / SUDO ───────────────────────────
-const isBanned = async (jid) => {
-  const snap = await db.ref(`banned/${jid.replace(/[^0-9]/g, '')}`).once('value');
-  return snap.exists();
-};
-const banUser = async (jid, reason = 'No reason') =>
-  db.ref(`banned/${jid.replace(/[^0-9]/g, '')}`).set({ jid, reason, time: Date.now() });
-const unbanUser = async (jid) => db.ref(`banned/${jid.replace(/[^0-9]/g, '')}`).remove();
-const isSudo = async (jid) => {
-  const snap = await db.ref(`sudo/${jid.replace(/[^0-9]/g, '')}`).once('value');
-  return snap.exists();
-};
-const addSudo = async (jid) => db.ref(`sudo/${jid.replace(/[^0-9]/g, '')}`).set({ jid, time: Date.now() });
-const removeSudo = async (jid) => db.ref(`sudo/${jid.replace(/[^0-9]/g, '')}`).remove();
+// ─── Ban / Sudo ──────────────────────────────────────────────
+const isBanned   = async (jid) => !!(await safeGet(`banned/${cleanJid(jid)}`));
+const banUser    = (jid, reason='No reason') => safeSet(`banned/${cleanJid(jid)}`, { jid, reason, time: Date.now() });
+const unbanUser  = (jid) => safeRemove(`banned/${cleanJid(jid)}`);
+const isSudo     = async (jid) => !!(await safeGet(`sudo/${cleanJid(jid)}`));
+const addSudo    = (jid) => safeSet(`sudo/${cleanJid(jid)}`, { jid, time: Date.now() });
+const removeSudo = (jid) => safeRemove(`sudo/${cleanJid(jid)}`);
 
-// ── SETTINGS ─────────────────────────────
-const getSettings = async () => {
-  const snap = await db.ref('settings').once('value');
-  return snap.val() || {};
-};
-const setSetting = async (key, value) => db.ref(`settings/${key}`).set(value);
+// ─── Settings ────────────────────────────────────────────────
+const getSettings  = async () => (await safeGet('settings')) || {};
+const setSetting   = (key, value) => safeSet(`settings/${key}`, value);
 
-// ── AUTO REPLY RULES ─────────────────────
-const getRules = async () => {
-  const snap = await db.ref('autoreplies').once('value');
-  return snap.val() || {};
-};
-const addRule = async (keyword, reply, type = 'TEXT') => {
+// ─── Auto Replies ────────────────────────────────────────────
+const getRules    = async () => (await safeGet('autoreplies')) || {};
+const addRule     = (keyword, reply, type='TEXT') => {
   const id = Date.now().toString();
-  await db.ref(`autoreplies/${id}`).set({ keyword, reply, type, active: true, created: Date.now() });
+  return safeSet(`autoreplies/${id}`, { keyword, reply, type, active: true, created: Date.now() });
 };
-const deleteRule = async (id) => db.ref(`autoreplies/${id}`).remove();
+const deleteRule  = (id) => safeRemove(`autoreplies/${id}`);
 
-// ── GROUPS ───────────────────────────────
-const saveGroup = async (groupId, data) =>
-  db.ref(`groups/${groupId.replace('@', '_')}`).update({ ...data, lastSeen: Date.now() });
+// ─── Groups ──────────────────────────────────────────────────
+const saveGroup   = (groupId, data) => safeUpdate(`groups/${groupId.replace('@','_')}`, { ...data, updated: Date.now() });
+const groupBan    = (groupId, jid) => safeSet(`groups/${groupId.replace('@','_')}/banned/${cleanJid(jid)}`, { jid, time: Date.now() });
+const groupUnban  = (groupId, jid) => safeRemove(`groups/${groupId.replace('@','_')}/banned/${cleanJid(jid)}`);
+const isGroupBanned = async (groupId, jid) => !!(await safeGet(`groups/${groupId.replace('@','_')}/banned/${cleanJid(jid)}`));
 
-// ── WEB PASSWORD ─────────────────────────
-const generateWebPass = (number) => {
-  const seed = number.replace(/\D/g, '');
-  let hash = 0;
-  for (const c of seed) hash = (hash * 31 + c.charCodeAt(0)) & 0x7fffffff;
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let pw = 'RQ';
-  let h = hash;
-  for (let i = 0; i < 6; i++) { pw += chars[h % chars.length]; h = Math.floor(h / chars.length) || hash + i + 1; }
-  return pw;
-};
-
-const saveWebPass = async (jid, pass) => db.ref(`webpass/${jid.replace(/[^0-9]/g, '')}`).set({ pass, time: Date.now() });
-const getWebPass = async (jid) => {
-  const snap = await db.ref(`webpass/${jid.replace(/[^0-9]/g, '')}`).once('value');
-  return snap.val()?.pass;
-};
+// ─── Web Password ────────────────────────────────────────────
+const saveWebPass = (jid, pass) => safeSet(`webpass/${cleanJid(jid)}`, { pass, time: Date.now() });
+const getWebPass  = async (jid) => (await safeGet(`webpass/${cleanJid(jid)}`))?.pass;
 
 module.exports = {
   initFirebase, getDb,
-  getUser, saveUser,
-  saveUnknownMsg, getInbox, isKnownNumber, markFirstContact,
+  getUser, saveUser, isKnownNumber, markFirstContact,
+  saveInboxMsg, getInbox,
   getCoins, updateCoins, addCoins,
   getChannelList, addChannel, removeChannel, logChannelReact,
   isBanned, banUser, unbanUser,
   isSudo, addSudo, removeSudo,
   getSettings, setSetting,
   getRules, addRule, deleteRule,
-  saveGroup,
-  generateWebPass, saveWebPass, getWebPass,
+  saveGroup, groupBan, groupUnban, isGroupBanned,
+  saveWebPass, getWebPass,
 };

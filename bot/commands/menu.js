@@ -1,11 +1,10 @@
 const config = require('../config');
 
-// ══════════════════════════════════════════════
-//   SASA MD — Menu System
-// ══════════════════════════════════════════════
+const p = config.prefix;
 
 const MENUS = {
-  main: (name) => `*🌍⃝⃘̉̉̉━⋆─⋆──❂*
+  main: (name) =>
+`*🌍⃝⃘̉̉̉━⋆─⋆──❂*
 *┊ ┊ ┊ ┊ ┊*
 *┊ ┊ ✫ ˚㋛ ⋆｡ ❀*
 *┊ ☠︎︎*
@@ -18,7 +17,7 @@ const MENUS = {
 *┃* *𝙾𝚆𝙽𝙴𝚁* - ${config.ownerName}
 *┃* *𝚅𝙴𝚁𝚂𝙸𝙾𝙽* - ${config.version}
 *┃* *𝙲𝙾𝙼𝙼𝙰𝙽𝙳𝚂* - ${config.totalCommands}
-*┃* *𝙿𝚁𝙴𝙵𝙸𝚇* - [ ${config.prefix} ]
+*┃* *𝙿𝚁𝙴𝙵𝙸𝚇* - [ ${p} ]
 *┃* *𝙰𝙲𝚃𝙸𝚅𝙴 𝙱𝙾𝚃𝚂* - ${config.activeBots}
 *┗━━━━━━━━━━━━━❥❥❥*
 *┏━「 Reply Number ⤵️ 」*
@@ -33,190 +32,165 @@ const MENUS = {
 
 > *Powered by ${config.ownerName}*`,
 
-  owner: () => `*┏━━━━━━━━━━━━━❥❥❥*
+  '1': () =>
+`*┏━━━━━━━━━━━━━❥❥❥*
 *┃* *👑 OWNER MENU*
 *┗━━━━━━━━━━━━━❥❥❥*
 *┏━━━━━━━━━━━━━❥❥❥*
-*┃* ${config.prefix}privacy
-*┃* ${config.prefix}setting
-*┃* ${config.prefix}getdp
-*┃* ${config.prefix}csong
-*┃* ${config.prefix}setsudo
-*┃* ${config.prefix}delsudo
-*┃* ${config.prefix}setcall
-*┃* ${config.prefix}delcall
-*┃* ${config.prefix}ban
-*┃* ${config.prefix}unban
-*┃* ${config.prefix}getpass
-*┃* ${config.prefix}setpass
-*┃* ${config.prefix}broadcast
-*┃* ${config.prefix}restart
+*┃* ${p}privacy
+*┃* ${p}setting
+*┃* ${p}getdp
+*┃* ${p}setsudo
+*┃* ${p}delsudo
+*┃* ${p}setcall
+*┃* ${p}delcall
+*┃* ${p}ban
+*┃* ${p}unban
+*┃* ${p}getpass
+*┃* ${p}setprefix
+*┃* ${p}broadcast
+*┃* ${p}restart
+*┃* ${p}shutdown
 *┗━━━━━━━━━━━━━❥❥❥*
-
 > *Powered by ${config.ownerName}*`,
 
-  social: () => `*┏━━━━━━━━━━━━━❥❥❥*
+  '2': () =>
+`*┏━━━━━━━━━━━━━❥❥❥*
 *┃* *🌐 SOCIAL MENU*
 *┗━━━━━━━━━━━━━❥❥❥*
 *┏━━━━━━━━━━━━━❥❥❥*
-*┃* ${config.prefix}song
-*┃* ${config.prefix}video
-*┃* ${config.prefix}fb
-*┃* ${config.prefix}tiktok
-*┃* ${config.prefix}insta
-*┃* ${config.prefix}twitter
-*┃* ${config.prefix}movie
-*┃* ${config.prefix}apk
-*┃* ${config.prefix}img
-*┃* ${config.prefix}xnxx *(18+)*
-*┃* ${config.prefix}xham *(18+)*
+*┃* ${p}song <name/url>
+*┃* ${p}video <name/url>
+*┃* ${p}fb <url>
+*┃* ${p}tiktok <url>
+*┃* ${p}insta <url>
+*┃* ${p}twitter <url>
+*┃* ${p}movie <name>
+*┃* ${p}apk <name>
+*┃* ${p}img <query>
 *┗━━━━━━━━━━━━━❥❥❥*
-
 > *Powered by ${config.ownerName}*`,
 
-  ai: () => `*┏━━━━━━━━━━━━━❥❥❥*
+  '3': () =>
+`*┏━━━━━━━━━━━━━❥❥❥*
 *┃* *🤖 AI MENU*
 *┗━━━━━━━━━━━━━❥❥❥*
 *┏━━━━━━━━━━━━━❥❥❥*
-*┃* ${config.prefix}ai <question>
-*┃* ${config.prefix}gpt <question>
-*┃* ${config.prefix}gemini <question>
-*┃* ${config.prefix}imagine <prompt>
-*┃* ${config.prefix}aisticker <prompt>
-*┃* ${config.prefix}translate <text>
-*┃* ${config.prefix}spell <text>
-*┃* ${config.prefix}summarize
+*┃* ${p}ai <question>
+*┃* ${p}gpt <question>
+*┃* ${p}gemini <question>
+*┃* ${p}imagine <prompt>
+*┃* ${p}translate <text>
+*┃* ${p}spell <text>
+*┃* ${p}summarize
 *┗━━━━━━━━━━━━━❥❥❥*
-
 > *Powered by ${config.ownerName}*`,
 
-  group: () => `*┏━━━━━━━━━━━━━❥❥❥*
+  '4': () =>
+`*┏━━━━━━━━━━━━━❥❥❥*
 *┃* *👥 GROUP MENU*
 *┗━━━━━━━━━━━━━❥❥❥*
 *┏━━━━━━━━━━━━━❥❥❥*
-*┃* ${config.prefix}add
-*┃* ${config.prefix}kick
-*┃* ${config.prefix}promote
-*┃* ${config.prefix}del
-*┃* ${config.prefix}tagadmins
-*┃* ${config.prefix}tagall
-*┃* ${config.prefix}hidetag
-*┃* ${config.prefix}ginfo
-*┃* ${config.prefix}glink
-*┃* ${config.prefix}grlink
-*┃* ${config.prefix}gname
-*┃* ${config.prefix}gdec
-*┃* ${config.prefix}gdp
-*┃* ${config.prefix}grdp
-*┃* ${config.prefix}lock / unlock
-*┃* ${config.prefix}close / open
-*┃* ${config.prefix}addadmin
-*┃* ${config.prefix}join / left
-*┃* ${config.prefix}gdisappearing
-*┃* ${config.prefix}pin / unpin
-*┃* ${config.prefix}gsave
-*┃* ${config.prefix}ban / unban
-*┃* ${config.prefix}ganti
+*┃* ${p}add / ${p}kick
+*┃* ${p}promote / ${p}demote
+*┃* ${p}del
+*┃* ${p}tagadmins
+*┃* ${p}tagall
+*┃* ${p}hidetag
+*┃* ${p}ginfo
+*┃* ${p}glink
+*┃* ${p}grlink
+*┃* ${p}gname
+*┃* ${p}gdec
+*┃* ${p}gdp / ${p}grdp
+*┃* ${p}lock / ${p}unlock
+*┃* ${p}close / ${p}open
+*┃* ${p}join / ${p}left
+*┃* ${p}gdisappearing
+*┃* ${p}pin / ${p}unpin
+*┃* ${p}gsave
+*┃* ${p}gban / ${p}gunban
 *┗━━━━━━━━━━━━━❥❥❥*
-
 > *Powered by ${config.ownerName}*`,
 
-  tools: () => `*┏━━━━━━━━━━━━━❥❥❥*
+  '5': () =>
+`*┏━━━━━━━━━━━━━❥❥❥*
 *┃* *🔧 TOOLS MENU*
 *┗━━━━━━━━━━━━━❥❥❥*
 *┏━━━━━━━━━━━━━❥❥❥*
-*┃* ${config.prefix}ping
-*┃* ${config.prefix}system
-*┃* ${config.prefix}alive
-*┃* ${config.prefix}menu
-*┃* ${config.prefix}bot
-*┃* ${config.prefix}sticker
-*┃* ${config.prefix}toimg
-*┃* ${config.prefix}qr <text>
-*┃* ${config.prefix}base64
-*┃* ${config.prefix}weather <city>
-*┃* ${config.prefix}time <zone>
-*┃* ${config.prefix}calc <expr>
+*┃* ${p}ping
+*┃* ${p}system
+*┃* ${p}alive
+*┃* ${p}menu
+*┃* ${p}bot
+*┃* ${p}sticker (reply image)
+*┃* ${p}toimg (reply sticker)
+*┃* ${p}qr <text>
+*┃* ${p}calc <expression>
 *┗━━━━━━━━━━━━━❥❥❥*
-
 > *Powered by ${config.ownerName}*`,
 
-  education: () => `*┏━━━━━━━━━━━━━❥❥❥*
+  '6': () =>
+`*┏━━━━━━━━━━━━━❥❥❥*
 *┃* *📚 EDUCATION MENU*
 *┗━━━━━━━━━━━━━❥❥❥*
 *┏━━━━━━━━━━━━━❥❥❥*
-*┃* ${config.prefix}paper <topic>
-*┃* ${config.prefix}wiki <topic>
-*┃* ${config.prefix}define <word>
-*┃* ${config.prefix}currency <from> <to>
-*┃* ${config.prefix}news <topic>
-*┃* ${config.prefix}covid
-*┃* ${config.prefix}joke
-*┃* ${config.prefix}quote
+*┃* ${p}paper <topic>
+*┃* ${p}wiki <topic>
+*┃* ${p}define <word>
+*┃* ${p}news <topic>
+*┃* ${p}joke
+*┃* ${p}quote
 *┗━━━━━━━━━━━━━❥❥❥*
-
 > *Powered by ${config.ownerName}*`,
 
-  channel: () => `*┏━━━━━━━━━━━━━❥❥❥*
+  '7': () =>
+`*┏━━━━━━━━━━━━━❥❥❥*
 *┃* *📡 CHANNEL MENU*
 *┗━━━━━━━━━━━━━❥❥❥*
 *┏━━━━━━━━━━━━━❥❥❥*
-*┃* ${config.prefix}chanel — Channel react list
-*┃* ${config.prefix}react <link> — React to channel
-*┃* ${config.prefix}coins — View coin balance
-*┃* ${config.prefix}daily — Claim daily coins
-*┃* ${config.prefix}transfer — Transfer coins
-*┃* ${config.prefix}leaderboard — Top coin holders
-*┃* ${config.prefix}addchanel — Add channel to react list
-*┃* ${config.prefix}delchanel — Remove from react list
+*┃* ${p}chanel
+*┃* ${p}addchanel <link> <name>
+*┃* ${p}delchanel <id>
+*┃* ${p}react <link>
+*┃* ${p}coins
+*┃* ${p}daily
+*┃* ${p}transfer @user <amount>
+*┃* ${p}leaderboard
 *┗━━━━━━━━━━━━━❥❥❥*
-
 > *Powered by ${config.ownerName}*`,
 };
 
+const NUM_MAP = { '1':'1','2':'2','3':'3','4':'4','5':'5','6':'6','7':'7' };
+
 module.exports = async (sock, msg, args, command) => {
-  const from = msg.key.remoteJid;
-  const sender = msg.key.participant || msg.key.remoteJid;
-  const pushName = msg.pushName || 'User';
-  const reply = (text) => sock.sendMessage(from, { text }, { quoted: msg });
+  const from  = msg.key.remoteJid;
+  const name  = msg.pushName || 'User';
+  const send  = (text) => sock.sendMessage(from, { text }, { quoted: msg });
 
   if (command === 'menu') {
     const sub = args[0];
-    if (!sub) {
-      // Show main menu and wait for number reply
-      await reply(MENUS.main(pushName));
+    if (sub && MENUS[sub]) return send(MENUS[sub]());
+    await send(MENUS.main(name));
 
-      // Listen for numbered reply (1-7) for 30 seconds
-      const listener = async (ev) => {
-        for (const m of ev.messages) {
-          if (!m.message || m.key.fromMe) continue;
-          if (m.key.remoteJid !== from) continue;
-          const body = m.message?.conversation || m.message?.extendedTextMessage?.text || '';
-          const num = body.trim();
-          if (['1','2','3','4','5','6','7'].includes(num)) {
-            const menuMap = { '1':'owner','2':'social','3':'ai','4':'group','5':'tools','6':'education','7':'channel' };
-            await sock.sendMessage(from, { text: MENUS[menuMap[num]]() }, { quoted: m });
-            sock.ev.off('messages.upsert', listener);
-          }
+    // Listen for number reply (1-7) for 30 seconds
+    const handler = async ({ messages }) => {
+      for (const m of messages) {
+        if (!m.message || m.key.fromMe || m.key.remoteJid !== from) continue;
+        const body = (m.message?.conversation || m.message?.extendedTextMessage?.text || '').trim();
+        if (NUM_MAP[body]) {
+          await sock.sendMessage(from, { text: MENUS[body]() }, { quoted: m });
+          sock.ev.off('messages.upsert', handler);
         }
-      };
-      setTimeout(() => sock.ev.off('messages.upsert', listener), 30000);
-      sock.ev.on('messages.upsert', ({ messages }) => listener({ messages }));
-      return;
-    }
-    // Direct submenu
-    const subMap = { owner:'owner', social:'social', ai:'ai', group:'group', tools:'tools', edu:'education', education:'education', channel:'channel' };
-    const menuKey = subMap[sub.toLowerCase()];
-    if (menuKey) return reply(MENUS[menuKey]());
-    return reply(MENUS.main(pushName));
+      }
+    };
+    const timeout = setTimeout(() => sock.ev.off('messages.upsert', handler), 30000);
+    sock.ev.on('messages.upsert', handler);
+    return;
   }
 
-  // Handle numbered replies for menu
-  const body = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
-  if (['1','2','3','4','5','6','7'].includes(body.trim())) {
-    const menuMap = { '1':'owner','2':'social','3':'ai','4':'group','5':'tools','6':'education','7':'channel' };
-    return reply(MENUS[menuMap[body.trim()]]());
-  }
+  // Direct number reply if no active listener
+  if (MENUS[command]) return send(MENUS[command]());
 };
 
 module.exports.MENUS = MENUS;

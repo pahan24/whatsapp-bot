@@ -1,124 +1,159 @@
-const { getChannelList, addChannel, removeChannel, logChannelReact, getCoins, updateCoins } = require('../firebase');
+const {
+  getChannelList, addChannel, removeChannel,
+  logChannelReact, getCoins, updateCoins, addCoins,
+} = require('../firebase');
 const config = require('../config');
 
-// ══════════════════════════════════════════════
-//   SASA MD — Channel React System
-//   Bot auto-reacts to channels & earns coins
-// ══════════════════════════════════════════════
-
-const COINS_PER_REACT = 2;
 const OWNER_CHANNEL = {
+  id:   '0029Vb7ChKeAojYnYh1uMo3q',
   link: config.channelLink,
   name: 'SASA MD Official',
-  id: '0029Vb7ChKeAojYnYh1uMo3q',
+  active: true,
 };
+const COINS_PER_REACT = 2;
+const OWNER_JID = `${config.ownerNumber}@s.whatsapp.net`;
 
-// Auto-react when bot receives a channel newsletter message
+// Called from index.js when a newsletter/channel message arrives
 const handleChannelMessage = async (sock, msg) => {
   try {
     const from = msg.key.remoteJid;
-    // Channel newsletter messages have 'newsletter' in jid
-    if (!from.includes('newsletter')) return;
+    if (!from?.includes('@newsletter')) return;
 
-    // Check if this channel is in our react list
-    const channels = await getChannelList();
+    const channels = await getChannelList() || {};
     const channelId = from.split('@')[0];
-    const channel = channels[channelId] || (from.includes(OWNER_CHANNEL.id) ? OWNER_CHANNEL : null);
-    if (!channel?.active && !from.includes(OWNER_CHANNEL.id)) return;
+    const isOwnerCh = from.includes(OWNER_CHANNEL.id);
+    const registered = channels[channelId];
 
-    // React to the message
-    const emoji = '❤️';
-    await sock.sendMessage(from, {
-      react: { text: emoji, key: msg.key }
-    });
+    if (!registered?.active && !isOwnerCh) return;
 
-    // Award coins to all sudo users + owner
-    const ownerJid = `${config.ownerNumber}@s.whatsapp.net`;
-    await logChannelReact(ownerJid, channelId, COINS_PER_REACT);
-    console.log(`📡 Auto-reacted to channel: ${channel?.name || from} — +${COINS_PER_REACT} coins`);
+    // React with emoji
+    await sock.sendMessage(from, { react: { text: '❤️', key: msg.key } });
+
+    // Award coins to owner
+    await logChannelReact(OWNER_JID, channelId, COINS_PER_REACT);
+    console.log(`📡 Reacted to channel ${channelId} — +${COINS_PER_REACT} coins`);
   } catch (err) {
     console.error('Channel react error:', err.message);
   }
 };
 
 module.exports = async (sock, msg, args, command) => {
-  const from = msg.key.remoteJid;
+  const from   = msg.key.remoteJid;
   const sender = msg.key.participant || msg.key.remoteJid;
-  const isOwner = sender.replace(/[^0-9]/g, '') === config.ownerNumber.replace(/[^0-9]/g, '');
-  const reply = (text) => sock.sendMessage(from, { text }, { quoted: msg });
+  const isOwner = sender.replace(/\D/g, '') === config.ownerNumber.replace(/\D/g, '');
+  const reply  = (text) => sock.sendMessage(from, { text }, { quoted: msg });
+  const mention = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid?.[0];
 
-  // ── .chanel — list channels ──────────────────
-  if (command === 'chanel') {
-    const channels = await getChannelList();
-    const list = Object.values(channels);
-    // Always include owner channel
-    const allChannels = [OWNER_CHANNEL, ...list.filter(c => c.id !== OWNER_CHANNEL.id)];
-    if (!allChannels.length) return reply('❌ No channels in react list!');
-    const txt = allChannels.map((c, i) =>
-      `*${i + 1}.* ${c.name}\n   🔗 ${c.link}`
-    ).join('\n\n');
-    return reply(`*📡 CHANNEL REACT LIST*\n\n${txt}\n\n> Bot automatically reacts to these channels & earns *${COINS_PER_REACT} coins* per react!`);
-  }
+  switch (command) {
 
-  // ── .addchanel <link> <name> ─────────────────
-  if (command === 'addchanel') {
-    if (!isOwner) return reply('❌ Owner only!');
-    const link = args[0];
-    const name = args.slice(1).join(' ') || 'Channel';
-    if (!link?.includes('whatsapp.com/channel/')) return reply('📌 Usage: `.addchanel <channel_link> <name>`');
-    await addChannel(link, name);
-    return reply(`✅ Channel added to react list!\n📡 *${name}*\nBot will now auto-react to this channel for +${COINS_PER_REACT} coins per react.`);
-  }
+    // ── .chanel ──────────────────────────────────────────────
+    case 'chanel': {
+      const raw = await getChannelList() || {};
+      const list = [OWNER_CHANNEL, ...Object.values(raw).filter(c => c.id !== OWNER_CHANNEL.id)];
+      const txt  = list.map((c, i) =>
+        `*${i + 1}.* ${c.name}\n   🔗 ${c.link}`
+      ).join('\n\n');
+      return reply(
+`*┏━━━━━━━━━━━━━❥❥❥*
+*┃* *📡 CHANNEL REACT LIST*
+*┗━━━━━━━━━━━━━❥❥❥*
 
-  // ── .delchanel <id> ──────────────────────────
-  if (command === 'delchanel') {
-    if (!isOwner) return reply('❌ Owner only!');
-    const id = args[0];
-    if (!id) return reply('📌 Usage: `.delchanel <channel_id>`');
-    await removeChannel(id);
-    return reply('✅ Channel removed from react list!');
-  }
+${txt}
 
-  // ── .react <channel_link> ────────────────────
-  if (command === 'react') {
-    const link = args[0];
-    if (!link) return reply('📌 Usage: `.react <channel_link>`');
-    const coins = await getCoins(sender);
-    await logChannelReact(sender, link.split('/').pop(), COINS_PER_REACT);
-    return reply(`✅ Reacted! *+${COINS_PER_REACT} coins* earned!\n💰 New balance: *${(coins.balance || 0) + COINS_PER_REACT} coins*`);
-  }
+💰 Bot earns *+${COINS_PER_REACT} coins* per react!
+> Auto-react is active 24/7`
+      );
+    }
 
-  // ── .coins ───────────────────────────────────
-  if (command === 'coins') {
-    const data = await getCoins(sender);
-    const num = sender.replace(/[^0-9]/g, '');
-    return reply(`*💰 COIN WALLET*\n\n👤 Number: +${num}\n💎 Balance: *${data.balance || 0} coins*\n📤 Spent: *${data.spent || 0} coins*\n\n> Earn more coins by reacting to channels!\n> Use ${config.prefix}daily for free coins.`);
-  }
+    // ── .addchanel <link> <name> ──────────────────────────────
+    case 'addchanel': {
+      if (!isOwner) return reply('❌ Owner only!');
+      const link = args[0];
+      const name = args.slice(1).join(' ') || 'Channel';
+      if (!link?.includes('whatsapp.com/channel/'))
+        return reply('📌 Usage: `.addchanel <channel_link> <name>`');
+      await addChannel(link, name);
+      return reply(`✅ *${name}* added to react list!\nBot will now auto-react for +${COINS_PER_REACT} coins.`);
+    }
 
-  // ── .daily ───────────────────────────────────
-  if (command === 'daily') {
-    const data = await getCoins(sender);
-    const today = new Date().toDateString();
-    if (data.claimedDaily === today) return reply('❌ Already claimed today! Come back tomorrow.');
-    await updateCoins(sender, { balance: (data.balance || 0) + 5, claimedDaily: today });
-    return reply(`✅ *Daily coins claimed!* +5 coins\n💰 New balance: *${(data.balance || 0) + 5} coins*`);
-  }
+    // ── .delchanel <id> ───────────────────────────────────────
+    case 'delchanel': {
+      if (!isOwner) return reply('❌ Owner only!');
+      const id = args[0];
+      if (!id) return reply('📌 Usage: `.delchanel <channel_id>`');
+      await removeChannel(id);
+      return reply('✅ Channel removed from react list!');
+    }
 
-  // ── .leaderboard ─────────────────────────────
-  if (command === 'leaderboard') {
-    return reply(`🏆 *COIN LEADERBOARD*\n\n> Feature coming soon!\n> Keep earning coins by reacting to channels.`);
-  }
+    // ── .react <link> ─────────────────────────────────────────
+    case 'react': {
+      const link = args[0];
+      if (!link) return reply('📌 Usage: `.react <channel_link>`');
+      await logChannelReact(sender, link.split('/').pop(), COINS_PER_REACT);
+      const data = await getCoins(sender);
+      return reply(`✅ Reacted! *+${COINS_PER_REACT} coins* earned!\n💰 Balance: *${data.balance} coins*`);
+    }
 
-  // ── .transfer ────────────────────────────────
-  if (command === 'transfer') {
-    const mentioned = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid?.[0];
-    const amount = parseInt(args[1]) || parseInt(args[0]);
-    if (!mentioned || !amount) return reply('📌 Usage: `.transfer @user <amount>`');
-    const data = await getCoins(sender);
-    if ((data.balance || 0) < amount) return reply('❌ Insufficient coins!');
-    await updateCoins(sender, { balance: (data.balance || 0) - amount, spent: (data.spent || 0) + amount });
-    await logChannelReact(mentioned, 'transfer', amount);
-    return reply(`✅ Transferred *${amount} coins* to @${mentioned.split('@')[0]}!`);
+    // ── .coins ────────────────────────────────────────────────
+    case 'coins': {
+      const data = await getCoins(sender);
+      const num  = sender.replace(/\D/g, '');
+      return reply(
+`*💰 COIN WALLET*
+
+👤 Number: +${num}
+💎 Balance: *${data.balance || 0} coins*
+📤 Spent:   *${data.spent   || 0} coins*
+
+> Earn coins by reacting to channels!
+> Use ${config.prefix}daily for free coins.`
+      );
+    }
+
+    // ── .daily ────────────────────────────────────────────────
+    case 'daily': {
+      const data  = await getCoins(sender);
+      const today = new Date().toDateString();
+      if (data.claimedDaily === today)
+        return reply('❌ Already claimed today!\nCome back tomorrow for more coins.');
+      await updateCoins(sender, { balance: (data.balance || 0) + 5, claimedDaily: today });
+      return reply(`✅ *Daily coins claimed! +5 coins*\n💰 New balance: *${(data.balance || 0) + 5} coins*`);
+    }
+
+    // ── .transfer @user <amount> ──────────────────────────────
+    case 'transfer': {
+      const target = mention || (args[0] ? `${args[0].replace(/\D/g,'')}@s.whatsapp.net` : null);
+      const amount = parseInt(args[mention ? 0 : 1]);
+      if (!target || !amount || amount <= 0)
+        return reply('📌 Usage: `.transfer @user <amount>`');
+      const sData = await getCoins(sender);
+      if ((sData.balance || 0) < amount)
+        return reply(`❌ Insufficient coins! Your balance: *${sData.balance || 0}*`);
+      await updateCoins(sender, {
+        balance: (sData.balance || 0) - amount,
+        spent:   (sData.spent   || 0) + amount,
+      });
+      await addCoins(target, amount);
+      return reply(
+        `✅ Transferred *${amount} coins* to @${target.split('@')[0]}!`,
+        { mentions: [target] }
+      );
+    }
+
+    // ── .leaderboard ──────────────────────────────────────────
+    case 'leaderboard': {
+      return reply(
+`🏆 *COIN LEADERBOARD*
+
+> Feature available on the bot website!
+> Visit the Coin page to see top earners.
+
+💰 Keep earning coins by:
+• Reacting to channels (${config.prefix}react)
+• Daily claims (${config.prefix}daily)
+• Auto-react (bot does it automatically)`
+      );
+    }
   }
 };
 
