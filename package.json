@@ -1,0 +1,25 @@
+{
+  "name": "sasa-md",
+  "version": "5.2.0",
+  "description": "SASA MD WhatsApp Bot",
+  "main": "index.js",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "heroku-postbuild": "echo Build complete"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "^6.7.9",
+    "axios": "^1.6.8",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "firebase-admin": "^12.1.0",
+    "fs-extra": "^11.2.0",
+    "pino": "^9.1.0",
+    "qrcode": "^1.5.3"
+  }
+}
