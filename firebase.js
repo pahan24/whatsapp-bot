@@ -5,14 +5,21 @@ let db = null;
 
 const initFirebase = () => {
   try {
+    const projectId = process.env.FIREBASE_PROJECT_ID;
+    const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+    const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+    const databaseURL = process.env.FIREBASE_DATABASE_URL;
+
+    if (!projectId || !clientEmail || !privateKey || !databaseURL) {
+      console.warn('⚠️  Firebase not initialized: missing required env vars.');
+      console.warn('   Required: FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY, FIREBASE_DATABASE_URL');
+      return;
+    }
+
     if (!admin.apps.length) {
       admin.initializeApp({
-        credential: admin.credential.cert({
-          projectId:   process.env.FIREBASE_PROJECT_ID,
-          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-          privateKey:  process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-        }),
-        databaseURL: process.env.FIREBASE_DATABASE_URL,
+        credential: admin.credential.cert({ projectId, clientEmail, privateKey }),
+        databaseURL,
       });
     }
     db = admin.database();
@@ -24,11 +31,12 @@ const initFirebase = () => {
 };
 
 const clean = (jid) => jid?.replace(/[^0-9]/g, '') || '';
+const validPath = (p) => typeof p === 'string' && p.length > 0;
 
-const safeGet    = async (p) => { if (!db) return null; try { return (await db.ref(p).once('value')).val(); } catch { return null; } };
-const safeSet    = async (p, d) => { if (!db) return; try { await db.ref(p).set(d); } catch {} };
-const safeUpdate = async (p, d) => { if (!db) return; try { await db.ref(p).update(d); } catch {} };
-const safeRemove = async (p) => { if (!db) return; try { await db.ref(p).remove(); } catch {} };
+const safeGet    = async (p) => { if (!db || !validPath(p)) return null; try { return (await db.ref(p).once('value')).val(); } catch { return null; } };
+const safeSet    = async (p, d) => { if (!db || !validPath(p)) return; try { await db.ref(p).set(d); } catch {} };
+const safeUpdate = async (p, d) => { if (!db || !validPath(p)) return; try { await db.ref(p).update(d); } catch {} };
+const safeRemove = async (p) => { if (!db || !validPath(p)) return; try { await db.ref(p).remove(); } catch {} };
 
 // ── Session (Heroku support) ──────────────────────────────────
 const saveSessionToFirebase = async (sessionData) => {
