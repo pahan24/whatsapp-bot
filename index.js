@@ -18,7 +18,7 @@ const {
   isBanned,
   isKnownNumber, markFirstContact, saveInboxMsg,
   getSettings, setSetting,
-  addCoins, getUsers,
+  addCoins, getUserCount,
 } = require('./firebase');
 const config = require('./config');
 
@@ -28,6 +28,9 @@ let qrImageData = null;   // base64 PNG for web
 let botStatus   = 'disconnected'; // 'disconnected' | 'qr' | 'connected' | 'reconnecting'
 let pairingCode = null;   // pairing code for web
 let mainSock    = null;   // current bot socket
+let connectedNumber = null;
+let lastDisconnectCode = null;
+let lastDisconnectAt = null;
 let restartTimer = null;
 const RESTART_INTERVAL_MS = 5 * 60 * 60 * 1000; // 5 hours
 const sseClients = [];    // Server-Sent Events clients
@@ -194,10 +197,13 @@ const startServer = () => {
   // ── Bot status endpoint ─────────────────────────────────────
   app.get('/status', (_, res) => {
     res.json({
-      status:    botStatus,
-      hasQR:     !!qrImageData,
-      version:   config.version,
-      botName:   config.botName,
+      status:          botStatus,
+      hasQR:           !!qrImageData,
+      version:         config.version,
+      botName:         config.botName,
+      connectedNumber,
+      lastDisconnectCode,
+      lastDisconnectAt,
     });
   });
 
@@ -251,8 +257,8 @@ const startServer = () => {
   // ── Admin endpoints (hidden panel) ───────────────────────────
   app.get('/admin/status', async (_, res) => {
     try {
-      const settings = await getSettings();
-      const activeUsers = await getUserCount();
+      const settings = await promiseTimeout(getSettings(), 3000, {});
+      const activeUsers = await promiseTimeout(getUserCount(), 3000, 0);
       res.json({
         status: botStatus,
         botName: config.botName,
@@ -261,6 +267,9 @@ const startServer = () => {
         autoRead: settings.autoRead ?? config.autoRead,
         autoTyping: settings.autoTyping ?? config.autoTyping,
         activeUsers,
+        connectedNumber,
+        lastDisconnectCode,
+        lastDisconnectAt,
       });
     } catch (err) {
       res.status(500).json({ error: 'Admin status unavailable' });
@@ -407,11 +416,14 @@ const startBot = async () => {
       const code      = lastDisconnect?.error?.output?.statusCode;
       const reconnect = code !== DisconnectReason.loggedOut;
       botStatus       = reconnect ? 'reconnecting' : 'disconnected';
+      lastDisconnectCode = code ?? null;
+      lastDisconnectAt = Date.now();
       // Don't clear QR if reconnecting, so website can show it
       if (!reconnect) {
         currentQR   = null;
         qrImageData = null;
         pairingCode = null;
+        connectedNumber = null;
       }
       console.log(`🔴 Disconnected (code ${code}). Reconnect: ${reconnect}`);
       sseClients.forEach(res => {
@@ -426,12 +438,14 @@ const startBot = async () => {
       currentQR   = null;
       qrImageData = null;
       pairingCode = null;
+      const botNumber = sock.user?.id?.split(':')[0] || config.ownerNumber;
+      connectedNumber = botNumber;
       console.log(`\n✅ SASA MD v${config.version} — Connected!\n`);
       sseClients.forEach(res => {
         try { res.write(`data: ${JSON.stringify({ type: 'status', status: 'connected' })}\n\n`); } catch {}
       });
       const pass = config.getOwnerPass();
-      const botJid = sock.user?.id || OWNER_JID;
+      const botJid = `${botNumber}@s.whatsapp.net`;
       console.log(`📩 Sending connect message to ${botJid}`);
       try { await sock.sendMessage(botJid, { text: config.connectMsg(pass) }); } catch (err) { console.warn('⚠️ Could not send connect message:', err.message); }
     }
@@ -527,10 +541,15 @@ const startBot = async () => {
 };
 
 // ── Main ──────────────────────────────────────────────────────
+const promiseTimeout = (promise, ms, fallback) => new Promise((resolve) => {
+  const timer = setTimeout(() => resolve(fallback), ms);
+  promise.then((value) => { clearTimeout(timer); resolve(value); }).catch(() => { clearTimeout(timer); resolve(fallback); });
+});
+
 (async () => {
   console.log(`\n🤖 Starting SASA MD v${config.version}...`);
   initFirebase();
-  restoreSession();   // Restore session from SESSION_DATA env var (Heroku)
-  startServer();      // Start Express (Heroku needs open port)
-  await startBot();   // Start WhatsApp bot
+  await restoreSession();   // Restore session from SESSION_DATA env var (Heroku)
+  startServer();            // Start Express (Heroku needs open port)
+  await startBot();         // Start WhatsApp bot
 })();

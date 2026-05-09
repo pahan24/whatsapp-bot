@@ -2,6 +2,7 @@ const admin = require('firebase-admin');
 require('dotenv').config();
 
 let db = null;
+let firebaseHealthy = true;
 
 const initFirebase = () => {
   try {
@@ -11,6 +12,7 @@ const initFirebase = () => {
     const databaseURL = process.env.FIREBASE_DATABASE_URL;
 
     if (!projectId || !clientEmail || !privateKey || !databaseURL) {
+      firebaseHealthy = false;
       console.warn('⚠️  Firebase not initialized: missing required env vars.');
       console.warn('   Required: FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY, FIREBASE_DATABASE_URL');
       return;
@@ -34,25 +36,26 @@ const clean = (jid) => jid?.replace(/[^0-9]/g, '') || '';
 const validPath = (p) => typeof p === 'string' && p.length > 0;
 
 const safeGet    = async (p) => {
-  if (!db || !validPath(p)) return null;
+  if (!db || !firebaseHealthy || !validPath(p)) return null;
   try {
     return (await db.ref(p).once('value')).val();
   } catch (err) {
-    console.warn(`⚠️ Firebase safeGet failed for path ${p}:`, err.message);
+    firebaseHealthy = false;
+    console.warn(`⚠️ Firebase safeGet failed for path ${p}:`, err && err.message ? err.message : err);
     return null;
   }
 };
 const safeSet    = async (p, d) => {
-  if (!db || !validPath(p)) return;
-  try { await db.ref(p).set(d); } catch (err) { console.warn(`⚠️ Firebase safeSet failed for path ${p}:`, err.message); }
+  if (!db || !firebaseHealthy || !validPath(p)) return;
+  try { await db.ref(p).set(d); } catch (err) { firebaseHealthy = false; console.warn(`⚠️ Firebase safeSet failed for path ${p}:`, err && err.message ? err.message : err); }
 };
 const safeUpdate = async (p, d) => {
-  if (!db || !validPath(p)) return;
-  try { await db.ref(p).update(d); } catch (err) { console.warn(`⚠️ Firebase safeUpdate failed for path ${p}:`, err.message); }
+  if (!db || !firebaseHealthy || !validPath(p)) return;
+  try { await db.ref(p).update(d); } catch (err) { firebaseHealthy = false; console.warn(`⚠️ Firebase safeUpdate failed for path ${p}:`, err && err.message ? err.message : err); }
 };
 const safeRemove = async (p) => {
-  if (!db || !validPath(p)) return;
-  try { await db.ref(p).remove(); } catch (err) { console.warn(`⚠️ Firebase safeRemove failed for path ${p}:`, err.message); }
+  if (!db || !firebaseHealthy || !validPath(p)) return;
+  try { await db.ref(p).remove(); } catch (err) { firebaseHealthy = false; console.warn(`⚠️ Firebase safeRemove failed for path ${p}:`, err && err.message ? err.message : err); }
 };
 
 // ── Session (Heroku support) ──────────────────────────────────
@@ -66,7 +69,7 @@ const decodeFirebaseKey = (key) => {
 };
 
 const saveSessionToFirebase = async (sessionData) => {
-  if (!db) return;
+  if (!db || !firebaseHealthy) return;
   const saved = {};
   for (const [filename, content] of Object.entries(sessionData || {})) {
     const key = safeFirebaseKey(filename);
