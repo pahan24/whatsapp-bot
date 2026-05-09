@@ -20,6 +20,7 @@
     "firebase-admin": "^12.1.0",
     "fs-extra": "^11.2.0",
     "pino": "^9.1.0",
-    "qrcode": "^1.5.3"
+    "qrcode": "^1.5.3",
+    "qrcode-terminal": "^0.12.0"
   }
 }

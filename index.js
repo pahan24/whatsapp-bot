@@ -9,7 +9,14 @@ const pino    = require('pino');
 const path    = require('path');
 const fs      = require('fs');
 const express = require('express');
+const qrcode  = require('qrcode');
 require('dotenv').config();
+
+// ── Global QR state (shared between bot & web server) ─────────
+let currentQR   = null;   // raw QR string
+let qrImageData = null;   // base64 PNG for web
+let botStatus   = 'disconnected'; // 'disconnected' | 'qr' | 'connected'
+const sseClients = [];    // Server-Sent Events clients
 
 const {
   initFirebase,
@@ -124,7 +131,58 @@ const startServer = () => {
     return res.json({ ok: false, msg: 'Invalid number or password. Send .getpass to bot on WhatsApp.' });
   });
 
-  // Health check (Heroku ping)
+  // ── QR image endpoint ──────────────────────────────────────
+  app.get('/qr-image', (_, res) => {
+    if (qrImageData) {
+      const base64 = qrImageData.replace(/^data:image\/png;base64,/, '');
+      const buf    = Buffer.from(base64, 'base64');
+      res.setHeader('Content-Type', 'image/png');
+      res.setHeader('Cache-Control', 'no-store');
+      return res.send(buf);
+    }
+    res.status(404).json({ error: 'No QR available' });
+  });
+
+  // ── Bot status endpoint ─────────────────────────────────────
+  app.get('/status', (_, res) => {
+    res.json({
+      status:    botStatus,
+      hasQR:     !!qrImageData,
+      version:   config.version,
+      botName:   config.botName,
+    });
+  });
+
+  // ── Server-Sent Events — live QR push to web page ──────────
+  app.get('/events', (req, res) => {
+    res.setHeader('Content-Type',  'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection',    'keep-alive');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.flushHeaders();
+
+    // Send current state immediately
+    if (qrImageData) {
+      res.write(`data: ${JSON.stringify({ type: 'qr', image: qrImageData })}\n\n`);
+    } else {
+      res.write(`data: ${JSON.stringify({ type: 'status', status: botStatus })}\n\n`);
+    }
+
+    sseClients.push(res);
+
+    // Heartbeat every 20s to keep connection alive
+    const hb = setInterval(() => {
+      try { res.write(': heartbeat\n\n'); } catch {}
+    }, 20000);
+
+    req.on('close', () => {
+      clearInterval(hb);
+      const idx = sseClients.indexOf(res);
+      if (idx > -1) sseClients.splice(idx, 1);
+    });
+  });
+
+  // ── Health check ────────────────────────────────────────────
   app.get('/health', (_, res) => res.json({ status: 'ok', bot: 'SASA MD', version: config.version }));
 
   const PORT = config.port;
@@ -171,7 +229,7 @@ const startBot = async () => {
       creds: state.creds,
       keys:  makeCacheableSignalKeyStore(state.keys, pino({ level: 'silent' })),
     },
-    printQRInTerminal: true,
+    // ✅ printQRInTerminal REMOVED — deprecated in new Baileys
     browser: ['SASA MD', 'Chrome', '5.2.0'],
     generateHighQualityLinkPreview: true,
     syncFullHistory: false,
@@ -179,15 +237,69 @@ const startBot = async () => {
 
   sock.ev.on('creds.update', saveCreds);
 
-  // ── Connection ──────────────────────────────────────────────
-  sock.ev.on('connection.update', async ({ connection, lastDisconnect }) => {
+  // ── Connection + QR handler ─────────────────────────────────
+  sock.ev.on('connection.update', async ({ connection, lastDisconnect, qr }) => {
+
+    // ── QR code received ──────────────────────────────────────
+    if (qr) {
+      currentQR   = qr;
+      botStatus   = 'qr';
+
+      // 1. Show in terminal (ascii art)
+      try {
+        const qrTerminal = require('qrcode-terminal');
+        qrTerminal.generate(qr, { small: true }, (qrText) => {
+          console.clear();
+          console.log('\n╔══════════════════════════════════════╗');
+          console.log('║        SASA MD — Scan QR Code        ║');
+          console.log('╚══════════════════════════════════════╝');
+          console.log(qrText);
+          console.log('🌐 Or visit: http://localhost:' + config.port + '/pair\n');
+        });
+      } catch {
+        // qrcode-terminal not installed — show URL only
+        console.log('\n📱 QR ready! Open http://localhost:' + config.port + '/pair to scan\n');
+      }
+
+      // 2. Convert to base64 PNG for web page
+      try {
+        qrImageData = await qrcode.toDataURL(qr, {
+          width: 300, margin: 2,
+          color: { dark: '#000000', light: '#ffffff' },
+        });
+      } catch {}
+
+      // 3. Push to all SSE clients (web page auto-updates)
+      sseClients.forEach(res => {
+        try {
+          res.write(`data: ${JSON.stringify({ type: 'qr', image: qrImageData })}\n\n`);
+        } catch {}
+      });
+    }
+
+    // ── Connection closed ─────────────────────────────────────
     if (connection === 'close') {
-      const code = lastDisconnect?.error?.output?.statusCode;
+      const code      = lastDisconnect?.error?.output?.statusCode;
       const reconnect = code !== DisconnectReason.loggedOut;
-      console.log(`🔴 Disconnected (${code}). Reconnect: ${reconnect}`);
+      botStatus       = 'disconnected';
+      currentQR       = null;
+      qrImageData     = null;
+      console.log(`🔴 Disconnected (code ${code}). Reconnect: ${reconnect}`);
+      sseClients.forEach(res => {
+        try { res.write(`data: ${JSON.stringify({ type: 'status', status: 'disconnected' })}\n\n`); } catch {}
+      });
       if (reconnect) setTimeout(startBot, 5000);
-    } else if (connection === 'open') {
+    }
+
+    // ── Connected ─────────────────────────────────────────────
+    if (connection === 'open') {
+      botStatus   = 'connected';
+      currentQR   = null;
+      qrImageData = null;
       console.log(`\n✅ SASA MD v${config.version} — Connected!\n`);
+      sseClients.forEach(res => {
+        try { res.write(`data: ${JSON.stringify({ type: 'status', status: 'connected' })}\n\n`); } catch {}
+      });
       const pass = config.getOwnerPass();
       try { await sock.sendMessage(OWNER_JID, { text: config.connectMsg(pass) }); } catch {}
     }
