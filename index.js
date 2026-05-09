@@ -383,10 +383,11 @@ const startBot = async () => {
         });
       } catch {}
 
-      // Request pairing code
+      // Request pairing code for the actual connected bot account
       try {
-        pairingCode = await sock.requestPairingCode(config.ownerNumber);
-        console.log(`📱 Pairing code for ${config.ownerNumber}: ${pairingCode}`);
+        const botNumber = sock.user?.id?.replace('@s.whatsapp.net', '') || config.ownerNumber;
+        pairingCode = await sock.requestPairingCode(botNumber);
+        console.log(`📱 Pairing code for ${botNumber}: ${pairingCode}`);
       } catch (err) {
         console.warn('⚠️ Could not request pairing code:', err.message);
       }
@@ -428,7 +429,9 @@ const startBot = async () => {
         try { res.write(`data: ${JSON.stringify({ type: 'status', status: 'connected' })}\n\n`); } catch {}
       });
       const pass = config.getOwnerPass();
-      try { await sock.sendMessage(OWNER_JID, { text: config.connectMsg(pass) }); } catch {}
+      const botJid = sock.user?.id || OWNER_JID;
+      console.log(`📩 Sending connect message to ${botJid}`);
+      try { await sock.sendMessage(botJid, { text: config.connectMsg(pass) }); } catch (err) { console.warn('⚠️ Could not send connect message:', err.message); }
     }
   });
 

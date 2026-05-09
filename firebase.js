@@ -33,10 +33,27 @@ const initFirebase = () => {
 const clean = (jid) => jid?.replace(/[^0-9]/g, '') || '';
 const validPath = (p) => typeof p === 'string' && p.length > 0;
 
-const safeGet    = async (p) => { if (!db || !validPath(p)) return null; try { return (await db.ref(p).once('value')).val(); } catch { return null; } };
-const safeSet    = async (p, d) => { if (!db || !validPath(p)) return; try { await db.ref(p).set(d); } catch {} };
-const safeUpdate = async (p, d) => { if (!db || !validPath(p)) return; try { await db.ref(p).update(d); } catch {} };
-const safeRemove = async (p) => { if (!db || !validPath(p)) return; try { await db.ref(p).remove(); } catch {} };
+const safeGet    = async (p) => {
+  if (!db || !validPath(p)) return null;
+  try {
+    return (await db.ref(p).once('value')).val();
+  } catch (err) {
+    console.warn(`⚠️ Firebase safeGet failed for path ${p}:`, err.message);
+    return null;
+  }
+};
+const safeSet    = async (p, d) => {
+  if (!db || !validPath(p)) return;
+  try { await db.ref(p).set(d); } catch (err) { console.warn(`⚠️ Firebase safeSet failed for path ${p}:`, err.message); }
+};
+const safeUpdate = async (p, d) => {
+  if (!db || !validPath(p)) return;
+  try { await db.ref(p).update(d); } catch (err) { console.warn(`⚠️ Firebase safeUpdate failed for path ${p}:`, err.message); }
+};
+const safeRemove = async (p) => {
+  if (!db || !validPath(p)) return;
+  try { await db.ref(p).remove(); } catch (err) { console.warn(`⚠️ Firebase safeRemove failed for path ${p}:`, err.message); }
+};
 
 // ── Session (Heroku support) ──────────────────────────────────
 const saveSessionToFirebase = async (sessionData) => {
