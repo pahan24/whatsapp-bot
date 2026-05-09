@@ -204,9 +204,11 @@ const startServer = () => {
   // ── Server-Sent Events — live QR push to web page ──────────
   app.get('/events', (req, res) => {
     res.setHeader('Content-Type',  'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
     res.setHeader('Connection',    'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
     res.setHeader('Access-Control-Allow-Origin', '*');
+    req.socket.setKeepAlive(true, 20000);
     res.flushHeaders();
 
     // Send current state immediately
@@ -383,9 +385,9 @@ const startBot = async () => {
         });
       } catch {}
 
-      // Request pairing code for the actual connected bot account
+      // Request pairing code for the currently active bot number
       try {
-        const botNumber = sock.user?.id?.replace('@s.whatsapp.net', '') || config.ownerNumber;
+        const botNumber = sock.user?.id?.split('@')[0] || config.ownerNumber;
         pairingCode = await sock.requestPairingCode(botNumber);
         console.log(`📱 Pairing code for ${botNumber}: ${pairingCode}`);
       } catch (err) {

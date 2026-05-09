@@ -58,9 +58,18 @@ const safeRemove = async (p) => {
 // ── Session (Heroku support) ──────────────────────────────────
 const saveSessionToFirebase = async (sessionData) => {
   if (!db) return;
-  await safeSet('session/sasa_md', sessionData);
+  const entries = Object.entries(sessionData || {}).map(([name, content]) => ({ name, content }));
+  await safeSet('session/sasa_md', entries);
 };
-const getSessionFromFirebase = async () => safeGet('session/sasa_md');
+const getSessionFromFirebase = async () => {
+  const data = await safeGet('session/sasa_md');
+  if (!data) return null;
+  if (Array.isArray(data)) return data.reduce((acc, item) => {
+    if (item && item.name) acc[item.name] = item.content;
+    return acc;
+  }, {});
+  return data;
+};
 
 // ── Users ─────────────────────────────────────────────────────
 const getUser          = (jid) => safeGet(`users/${clean(jid)}`);
