@@ -218,6 +218,13 @@
         </div>
       </div>
 
+      <!-- Pairing Code Display -->
+      <div id="qrCodeDisplay" style="display:none;text-align:center;margin-top:1rem;">
+        <div style="font-family:'Share Tech Mono',monospace;font-size:0.7rem;letter-spacing:3px;color:var(--red);margin-bottom:1rem;">PAIRING CODE</div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:0.4rem;margin-bottom:1.2rem;flex-wrap:wrap;" id="qrCodeDigits"></div>
+        <button class="btn btn-grey btn-sm" onclick="copyQrCode()">📋 Copy Code</button>
+      </div>
+
       <!-- Timer bar -->
       <div id="qrTimerWrap" style="display:none;margin-top:0.8rem;">
         <div style="width:200px;height:3px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden;margin:0 auto;">
@@ -233,7 +240,7 @@
         <div style="font-size:0.82rem;color:var(--white3);margin-top:0.4rem;">SASA MD is now active on WhatsApp</div>
       </div>
 
-      <p class="qr-note" id="qrNote">Open WhatsApp → Settings → Linked Devices<br/>→ Link a Device → Scan QR Code</p>
+      <p class="qr-note" id="qrNote">Open WhatsApp → Settings → Linked Devices<br/>→ Link a Device → Scan QR Code<br/><br/>Or enter the Pairing Code above in WhatsApp.</p>
       <button class="btn btn-grey btn-sm" style="margin-top:0.8rem;" onclick="reconnectSSE()">🔄 Refresh</button>
     </div>
   </div>
@@ -337,9 +344,21 @@ function startTimer(secs) {
   },1000);
 }
 
-function copyCode() {
-  navigator.clipboard.writeText(rawCode.replace(/-/g,''));
-  showToast('✅ Code copied!', 'success');
+function renderQrCode(code) {
+  const clean = code.replace(/-/g,'').toUpperCase().padEnd(8,'0').slice(0,8);
+  const wrap = document.getElementById('qrCodeDigits');
+  wrap.innerHTML = '';
+  [...clean].forEach((ch,i) => {
+    if (i===4) wrap.insertAdjacentHTML('beforeend','<div class="code-sep">—</div>');
+    wrap.insertAdjacentHTML('beforeend',`<div class="code-digit">${ch}</div>`);
+  });
+  document.getElementById('qrCodeDisplay').style.display = 'block';
+}
+
+function copyQrCode() {
+  const code = Array.from(document.querySelectorAll('#qrCodeDigits .code-digit')).map(d => d.textContent).join('').replace(/—/g,'-');
+  navigator.clipboard.writeText(code);
+  showToast('✅ Pairing code copied!', 'success');
 }
 
 // ── SSE Live QR System ────────────────────────────────────────
@@ -357,7 +376,7 @@ function startSSE() {
     try {
       const data = JSON.parse(e.data);
       if (data.type === 'qr' && data.image) {
-        showQRImage(data.image);
+        showQRImage(data.image, data.code);
       } else if (data.type === 'status') {
         handleStatusUpdate(data.status);
       }
@@ -385,7 +404,7 @@ function reconnectSSE() {
   }).catch(() => setQrStatus('offline','Bot offline'));
 }
 
-function showQRImage(src) {
+function showQRImage(src, code) {
   const img         = document.getElementById('qrImg');
   const placeholder = document.getElementById('qrPlaceholder');
   const connected   = document.getElementById('qrConnected');
@@ -401,6 +420,10 @@ function showQRImage(src) {
 
   setQrStatus('ready', 'QR ready — scan with WhatsApp');
   startQRTimer(60);
+
+  if (code) {
+    renderQrCode(code);
+  }
 }
 
 function handleStatusUpdate(status) {
@@ -410,6 +433,7 @@ function handleStatusUpdate(status) {
     document.getElementById('qrConnected').style.display = 'block';
     document.getElementById('qrTimerWrap').style.display  = 'none';
     document.getElementById('qrNote').style.display       = 'none';
+    document.getElementById('qrCodeDisplay').style.display = 'none';
     setQrStatus('connected', 'Bot connected! ✅');
     clearInterval(qrTimerInt);
     showToast('✅ SASA MD connected!', 'success');
@@ -421,6 +445,7 @@ function handleStatusUpdate(status) {
     document.getElementById('qrConnected').style.display = 'none';
     document.getElementById('qrTimerWrap').style.display  = 'none';
     document.getElementById('qrNote').style.display       = 'none';
+    document.getElementById('qrCodeDisplay').style.display = 'none';
   } else if (status === 'reconnecting') {
     setQrStatus('connecting', 'Bot reconnecting...');
     // Keep any existing QR displayed

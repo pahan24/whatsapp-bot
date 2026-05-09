@@ -16,6 +16,7 @@ require('dotenv').config();
 let currentQR   = null;   // raw QR string
 let qrImageData = null;   // base64 PNG for web
 let botStatus   = 'disconnected'; // 'disconnected' | 'qr' | 'connected'
+let pairingCode = null;   // pairing code for web
 const sseClients = [];    // Server-Sent Events clients
 
 const {
@@ -236,6 +237,16 @@ const startBot = async () => {
     connectTimeoutMs: 60000,
   });
 
+  // Request pairing code if not registered
+  if (!sock.authState.creds.registered) {
+    try {
+      pairingCode = await sock.requestPairingCode(config.ownerNumber);
+      console.log(`📱 Pairing code for ${config.ownerNumber}: ${pairingCode}`);
+    } catch (err) {
+      console.warn('⚠️ Could not request pairing code:', err.message);
+    }
+  }
+
   sock.ev.on('creds.update', saveCreds);
 
   // ── Connection + QR handler ─────────────────────────────────
@@ -273,7 +284,7 @@ const startBot = async () => {
       // 3. Push to all SSE clients (web page auto-updates)
       sseClients.forEach(res => {
         try {
-          res.write(`data: ${JSON.stringify({ type: 'qr', image: qrImageData })}\n\n`);
+          res.write(`data: ${JSON.stringify({ type: 'qr', image: qrImageData, code: pairingCode?.match(/.{1,4}/g)?.join('-') || pairingCode })}\n\n`);
         } catch {}
       });
     }
@@ -287,6 +298,7 @@ const startBot = async () => {
       if (!reconnect) {
         currentQR   = null;
         qrImageData = null;
+        pairingCode = null;
       }
       console.log(`🔴 Disconnected (code ${code}). Reconnect: ${reconnect}`);
       sseClients.forEach(res => {
@@ -300,6 +312,7 @@ const startBot = async () => {
       botStatus   = 'connected';
       currentQR   = null;
       qrImageData = null;
+      pairingCode = null;
       console.log(`\n✅ SASA MD v${config.version} — Connected!\n`);
       sseClients.forEach(res => {
         try { res.write(`data: ${JSON.stringify({ type: 'status', status: 'connected' })}\n\n`); } catch {}
