@@ -186,6 +186,9 @@ const startServer = () => {
   // ── Health check ────────────────────────────────────────────
   app.get('/health', (_, res) => res.json({ status: 'ok', bot: 'SASA MD', version: config.version }));
 
+  // ── Config endpoint ──────────────────────────────────────────
+  app.get('/config', (_, res) => res.json({ webPassword: config.webPassword }));
+
   const PORT = config.port;
   app.listen(PORT, () => console.log(`🌐 Server running on port ${PORT}`));
 };
@@ -237,16 +240,6 @@ const startBot = async () => {
     connectTimeoutMs: 60000,
   });
 
-  // Request pairing code if not registered
-  if (!sock.authState.creds.registered) {
-    try {
-      pairingCode = await sock.requestPairingCode(config.ownerNumber);
-      console.log(`📱 Pairing code for ${config.ownerNumber}: ${pairingCode}`);
-    } catch (err) {
-      console.warn('⚠️ Could not request pairing code:', err.message);
-    }
-  }
-
   sock.ev.on('creds.update', saveCreds);
 
   // ── Connection + QR handler ─────────────────────────────────
@@ -280,6 +273,14 @@ const startBot = async () => {
           color: { dark: '#000000', light: '#ffffff' },
         });
       } catch {}
+
+      // Request pairing code
+      try {
+        pairingCode = await sock.requestPairingCode(config.ownerNumber);
+        console.log(`📱 Pairing code for ${config.ownerNumber}: ${pairingCode}`);
+      } catch (err) {
+        console.warn('⚠️ Could not request pairing code:', err.message);
+      }
 
       // 3. Push to all SSE clients (web page auto-updates)
       sseClients.forEach(res => {

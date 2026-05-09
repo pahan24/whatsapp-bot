@@ -26,6 +26,7 @@ module.exports = {
   activeBots:    3650,
   channelLink:   'https://whatsapp.com/channel/0029Vb7ChKeAojYnYh1uMo3q',
   sessionId:     'sasa_md_session',
+  webPassword:   process.env.WEB_PASSWORD || 'sasa123',
 
   // Heroku uses process.env.PORT
   port: parseInt(process.env.PORT) || 3000,
