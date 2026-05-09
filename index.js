@@ -12,20 +12,25 @@ const express = require('express');
 const qrcode  = require('qrcode');
 require('dotenv').config();
 
+const {
+  initFirebase,
+  saveSessionToFirebase, getSessionFromFirebase,
+  isBanned,
+  isKnownNumber, markFirstContact, saveInboxMsg,
+  getSettings, setSetting,
+  addCoins, getUsers,
+} = require('./firebase');
+const config = require('./config');
+
 // ── Global QR state (shared between bot & web server) ─────────
 let currentQR   = null;   // raw QR string
 let qrImageData = null;   // base64 PNG for web
-let botStatus   = 'disconnected'; // 'disconnected' | 'qr' | 'connected'
+let botStatus   = 'disconnected'; // 'disconnected' | 'qr' | 'connected' | 'reconnecting'
 let pairingCode = null;   // pairing code for web
+let mainSock    = null;   // current bot socket
+let restartTimer = null;
+const RESTART_INTERVAL_MS = 5 * 60 * 60 * 1000; // 5 hours
 const sseClients = [];    // Server-Sent Events clients
-
-const {
-  initFirebase,
-  isBanned,
-  isKnownNumber, markFirstContact, saveInboxMsg,
-  getSettings,
-} = require('./firebase');
-const config = require('./config');
 
 // ── Commands ──────────────────────────────────────────────────
 const menuCmd      = require('./commands/menu');
@@ -75,20 +80,61 @@ const CMD_MAP = {
 const NUM_CMDS = new Set(['1','2','3','4','5','6','7']);
 
 // ── Restore session from env (Heroku) ─────────────────────────
-const restoreSession = () => {
-  const sessionData = process.env.SESSION_DATA;
-  if (!sessionData) return;
-  try {
-    const sessionPath = path.join(__dirname, 'sessions', config.sessionId);
-    if (!fs.existsSync(sessionPath)) fs.mkdirSync(sessionPath, { recursive: true });
-    const files = JSON.parse(Buffer.from(sessionData, 'base64').toString('utf8'));
+const restoreSession = async () => {
+  const sessionPath = path.join(__dirname, 'sessions', config.sessionId);
+  if (!fs.existsSync(sessionPath)) fs.mkdirSync(sessionPath, { recursive: true });
+
+  const writeSessionFiles = (files) => {
     for (const [filename, content] of Object.entries(files)) {
       fs.writeFileSync(path.join(sessionPath, filename), content);
     }
-    console.log('✅ Session restored from environment variable!');
-  } catch (err) {
-    console.warn('⚠️  Could not restore session:', err.message);
+  };
+
+  const sessionData = process.env.SESSION_DATA;
+  if (sessionData) {
+    try {
+      const files = JSON.parse(Buffer.from(sessionData, 'base64').toString('utf8'));
+      writeSessionFiles(files);
+      console.log('✅ Session restored from environment variable!');
+      return;
+    } catch (err) {
+      console.warn('⚠️  Could not restore session from environment variable:', err.message);
+    }
   }
+
+  try {
+    const firebaseSession = await getSessionFromFirebase();
+    if (firebaseSession) {
+      writeSessionFiles(firebaseSession);
+      console.log('✅ Session restored from Firebase backup!');
+      return;
+    }
+  } catch (err) {
+    console.warn('⚠️  Could not restore session from Firebase:', err.message);
+  }
+};
+
+const backupSession = async () => {
+  try {
+    const sessionPath = path.join(__dirname, 'sessions', config.sessionId);
+    if (!fs.existsSync(sessionPath)) return;
+    const files = {};
+    for (const file of fs.readdirSync(sessionPath)) {
+      files[file] = fs.readFileSync(path.join(sessionPath, file), 'utf8');
+    }
+    await saveSessionToFirebase(files);
+    console.log('✅ Session backed up to Firebase');
+  } catch (err) {
+    console.warn('⚠️ Could not backup session to Firebase:', err.message);
+  }
+};
+
+const scheduleRestart = () => {
+  if (restartTimer) clearTimeout(restartTimer);
+  restartTimer = setTimeout(() => {
+    console.log('🔁 Scheduled restart: restarting bot process after 5 hours');
+    process.exit(0);
+  }, RESTART_INTERVAL_MS);
 };
 
 // ── Express server (Heroku needs a web process) ───────────────
@@ -99,6 +145,7 @@ const startServer = () => {
 
   app.get('/', (_, res) => res.sendFile(path.join(__dirname, 'website', 'index.html')));
   app.get('/pair', (_, res) => res.sendFile(path.join(__dirname, 'website', 'minibot', 'create.html')));
+  app.get('/admin', (_, res) => res.sendFile(path.join(__dirname, 'website', 'admin.html')));
 
   // Code pairing endpoint
   app.get('/code', async (req, res) => {
@@ -186,6 +233,67 @@ const startServer = () => {
   // ── Health check ────────────────────────────────────────────
   app.get('/health', (_, res) => res.json({ status: 'ok', bot: 'SASA MD', version: config.version }));
 
+  // ── Pairing support for connected bot ─────────────────────────
+  app.get('/pairing/new', async (_, res) => {
+    if (!mainSock || botStatus !== 'connected') return res.json({ error: 'Bot is not connected' });
+    try {
+      const code = await mainSock.requestPairingCode(config.ownerNumber);
+      const formatted = code?.match(/.{1,4}/g)?.join('-') || code;
+      const image = await qrcode.toDataURL(code, { width: 300, margin: 2 });
+      return res.json({ code: formatted, image });
+    } catch (err) {
+      return res.json({ error: err?.message || 'Could not generate pairing code' });
+    }
+  });
+
+  // ── Admin endpoints (hidden panel) ───────────────────────────
+  app.get('/admin/status', async (_, res) => {
+    try {
+      const settings = await getSettings();
+      const users = await getUsers();
+      res.json({
+        status: botStatus,
+        botName: config.botName,
+        version: config.version,
+        activeBots: botStatus === 'connected' ? 1 : 0,
+        autoRead: settings.autoRead ?? config.autoRead,
+        autoTyping: settings.autoTyping ?? config.autoTyping,
+        activeUsers: users ? Object.keys(users).length : 0,
+      });
+    } catch (err) {
+      res.status(500).json({ error: 'Admin status unavailable' });
+    }
+  });
+
+  app.post('/admin/restart', (_, res) => {
+    res.json({ ok: true, msg: 'Bot restart triggered' });
+    console.log('🔧 Admin requested bot restart');
+    setTimeout(() => process.exit(0), 500);
+  });
+
+  app.post('/admin/settings', async (req, res) => {
+    const { autoRead, autoTyping } = req.body;
+    try {
+      if (typeof autoRead !== 'undefined') await setSetting('autoRead', !!autoRead);
+      if (typeof autoTyping !== 'undefined') await setSetting('autoTyping', !!autoTyping);
+      res.json({ ok: true });
+    } catch (err) {
+      res.status(500).json({ error: 'Could not save settings' });
+    }
+  });
+
+  app.post('/admin/coins', async (req, res) => {
+    const { number, amount } = req.body;
+    if (!number || Number.isNaN(Number(amount))) return res.status(400).json({ error: 'Invalid payload' });
+    const jid = `${number.replace(/\D/g, '')}@s.whatsapp.net`;
+    try {
+      await addCoins(jid, Number(amount));
+      res.json({ ok: true });
+    } catch (err) {
+      res.status(500).json({ error: 'Could not update coins' });
+    }
+  });
+
   const PORT = config.port;
   app.listen(PORT, () => console.log(`🌐 Server running on port ${PORT}`));
 };
@@ -237,7 +345,11 @@ const startBot = async () => {
     connectTimeoutMs: 60000,
   });
 
+  mainSock = sock;
+  scheduleRestart();
+
   sock.ev.on('creds.update', saveCreds);
+  sock.ev.on('creds.update', backupSession);
 
   // ── Connection + QR handler ─────────────────────────────────
   sock.ev.on('connection.update', async ({ connection, lastDisconnect, qr }) => {
@@ -359,7 +471,10 @@ const startBot = async () => {
           msg.message?.conversation ||
           msg.message?.extendedTextMessage?.text ||
           msg.message?.imageMessage?.caption ||
-          msg.message?.videoMessage?.caption || '';
+          msg.message?.videoMessage?.caption ||
+          msg.message?.buttonsResponseMessage?.selectedButtonId ||
+          msg.message?.listResponseMessage?.singleSelectReply?.selectedRowId ||
+          msg.message?.templateButtonReplyMessage?.selectedId || '';
 
         // Number reply (menu 1-7)
         const trimmed = body.trim();

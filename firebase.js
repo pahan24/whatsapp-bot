@@ -64,6 +64,8 @@ const logChannelReact = async (jid, channelId, coins) => {
   await addCoins(jid, coins);
 };
 
+const getUsers = async () => (await safeGet('users')) || {};
+
 // ── Ban / Sudo ────────────────────────────────────────────────
 const isBanned   = async (jid) => !!(await safeGet(`banned/${clean(jid)}`));
 const banUser    = (jid, reason = 'No reason') => safeSet(`banned/${clean(jid)}`, { jid, reason, time: Date.now() });
@@ -104,5 +106,6 @@ module.exports = {
   getSettings, setSetting,
   getRules, addRule, deleteRule,
   saveGroup, groupBan, groupUnban, isGroupBanned,
+  getUsers,
   saveWebPass, getWebPass,
 };

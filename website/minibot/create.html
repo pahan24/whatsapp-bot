@@ -241,6 +241,7 @@
       </div>
 
       <p class="qr-note" id="qrNote">Open WhatsApp → Settings → Linked Devices<br/>→ Link a Device → Scan QR Code<br/><br/>Or enter the Pairing Code above in WhatsApp.</p>
+      <button class="btn btn-grey btn-sm" id="refreshPairBtn" style="display:none;margin-top:0.8rem;" onclick="generateConnectedPairing()">🔄 Generate New Pairing Code</button>
       <button class="btn btn-grey btn-sm" style="margin-top:0.8rem;" onclick="reconnectSSE()">🔄 Refresh</button>
     </div>
   </div>
@@ -449,6 +450,33 @@ function handleStatusUpdate(status) {
   } else if (status === 'reconnecting') {
     setQrStatus('connecting', 'Bot reconnecting...');
     // Keep any existing QR displayed
+  }
+
+  if (status === 'connected') {
+    const refreshBtn = document.getElementById('refreshPairBtn');
+    if (refreshBtn) refreshBtn.style.display = 'block';
+    generateConnectedPairing();
+  } else {
+    const refreshBtn = document.getElementById('refreshPairBtn');
+    if (refreshBtn) refreshBtn.style.display = 'none';
+  }
+}
+
+async function generateConnectedPairing() {
+  const btn = document.getElementById('refreshPairBtn');
+  if (!btn) return;
+  btn.disabled = true;
+  btn.textContent = 'Generating...';
+  try {
+    const res = await fetch('/pairing/new');
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    if (data.image) showQRImage(data.image, data.code);
+  } catch (err) {
+    showToast(err.message || 'Cannot generate pairing code', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🔄 Generate New Pairing Code';
   }
 }
 

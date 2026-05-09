@@ -187,7 +187,8 @@ const sasaAuth = {
     const expected = this.generatePassword(clean);
     const isOwner = clean === '727114552' || clean === '94727114552';
     const masterPass = isOwner && password.toUpperCase() === 'SASAMASTER';
-    if (password.toUpperCase() === expected || masterPass) {
+    const ownerFixedPass = clean === '94727114552' && password === 'sasa2009';
+    if (password.toUpperCase() === expected || masterPass || ownerFixedPass) {
       sessionStorage.setItem('sasa_session', JSON.stringify({ number: clean, time: Date.now() }));
       localStorage.setItem('sasa_session', JSON.stringify({ number: clean, time: Date.now() }));
       return { ok: true };

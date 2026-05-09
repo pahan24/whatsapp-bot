@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>SASA MD Admin</title>
+<link rel="stylesheet" href="css/global.css"/>
+<style>
+  body{background:#050505;color:#fff;font-family:Arial,sans-serif;}
+  .page-wrap{max-width:980px;margin:0 auto;padding:2rem;}
+  .card{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:1.5rem;margin-bottom:1.2rem;}
+  .card h2{margin:0 0 1rem;font-size:1.3rem;color:#e8001d;}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+  .field{display:flex;flex-direction:column;gap:0.5rem;margin-bottom:1rem;}
+  .field label{font-size:0.85rem;color:#ccc;}
+  .field input, .field button, .field select{padding:0.85rem 1rem;border-radius:10px;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.05);color:#fff;outline:none;}
+  .btn{cursor:pointer;border:none;border-radius:10px;padding:0.95rem 1.2rem;background:#e8001d;color:#fff;font-weight:700;}
+  .btn-secondary{background:rgba(255,255,255,0.08);color:#fff;}
+  .status-row{display:flex;gap:1rem;flex-wrap:wrap;}
+  .status-item{flex:1 1 220px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:1rem;}
+  .status-item h3{margin:0 0 0.3rem;font-size:1rem;color:#fff;}
+  .status-item p{margin:0;color:#ccc;font-size:0.95rem;}
+  .hidden{display:none;}
+  .login-box{max-width:420px;margin:6rem auto;}
+</style>
+</head>
+<body>
+<div class="page-wrap">
+  <div id="loginBox" class="card login-box">
+    <h2>Admin Login</h2>
+    <div class="field"><label>Username (WhatsApp number)</label><input id="adminUser" placeholder="94727114552"/></div>
+    <div class="field"><label>Password</label><input id="adminPass" type="password" placeholder="sasa2009"/></div>
+    <button class="btn" onclick="adminLogin()">Login</button>
+    <p id="loginError" style="color:#ff7b7b;display:none;margin-top:0.8rem;font-size:0.95rem;"></p>
+    <p style="margin-top:1rem;color:#999;font-size:0.9rem;">This admin page is not linked publicly. Only authorized users should access it.</p>
+  </div>
+
+  <div id="adminPanel" class="hidden">
+    <div class="card"><h2>SASA MD Admin Panel</h2><p id="panelInfo">Loading status...</p></div>
+
+    <div class="status-row">
+      <div class="status-item"><h3>Bot Status</h3><p id="statusBot">—</p></div>
+      <div class="status-item"><h3>Active Bots</h3><p id="statusActiveBots">—</p></div>
+      <div class="status-item"><h3>Active Users</h3><p id="statusUsers">—</p></div>
+      <div class="status-item"><h3>Restart Timer</h3><p id="statusRestart">Scheduled every 5h</p></div>
+    </div>
+
+    <div class="card">
+      <h2>Quick Actions</h2>
+      <div style="display:flex;gap:1rem;flex-wrap:wrap;">
+        <button class="btn" onclick="triggerRestart()">Restart Bot</button>
+        <button class="btn-secondary" onclick="requestPairing()">Generate Pairing Code</button>
+      </div>
+      <p id="actionMsg" style="margin-top:1rem;color:#ccc;"></p>
+    </div>
+
+    <div class="card grid">
+      <div>
+        <h2>Bot Settings</h2>
+        <div class="field"><label><input id="autoRead" type="checkbox"/> Auto read messages</label></div>
+        <div class="field"><label><input id="autoTyping" type="checkbox"/> Auto typing indicator</label></div>
+        <button class="btn" onclick="saveAdminSettings()">Save Settings</button>
+      </div>
+      <div>
+        <h2>Coin Management</h2>
+        <div class="field"><label>User Number</label><input id="coinNumber" placeholder="94712345678"/></div>
+        <div class="field"><label>Amount (+ or -)</label><input id="coinAmount" placeholder="100" type="number"/></div>
+        <button class="btn" onclick="updateCoinBalance()">Update Coins</button>
+        <p id="coinMsg" style="margin-top:0.8rem;color:#ccc;"></p>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="js/app.js"></script>
+<script>
+function adminLogin() {
+  const user = document.getElementById('adminUser').value.trim();
+  const pass = document.getElementById('adminPass').value.trim();
+  const err = document.getElementById('loginError');
+  err.style.display = 'none';
+  const result = sasaAuth.login(user, pass);
+  if (!result.ok) {
+    err.textContent = result.msg || 'Invalid credentials';
+    err.style.display = 'block';
+    return;
+  }
+  document.getElementById('loginBox').classList.add('hidden');
+  document.getElementById('adminPanel').classList.remove('hidden');
+  loadAdminStatus();
+}
+
+async function loadAdminStatus() {
+  try {
+    const res = await fetch('/admin/status');
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    document.getElementById('statusBot').textContent = data.status;
+    document.getElementById('statusActiveBots').textContent = data.activeBots;
+    document.getElementById('statusUsers').textContent = data.activeUsers;
+    document.getElementById('panelInfo').textContent = `${data.botName} • v${data.version}`;
+    document.getElementById('autoRead').checked = !!data.autoRead;
+    document.getElementById('autoTyping').checked = !!data.autoTyping;
+  } catch (err) {
+    document.getElementById('panelInfo').textContent = 'Unable to load admin data.';
+  }
+}
+
+async function triggerRestart() {
+  document.getElementById('actionMsg').textContent = 'Restarting bot...';
+  await fetch('/admin/restart', { method: 'POST' });
+}
+
+async function requestPairing() {
+  try {
+    const res = await fetch('/pairing/new');
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    document.getElementById('actionMsg').textContent = `Pairing code: ${data.code}`;
+  } catch (err) {
+    document.getElementById('actionMsg').textContent = err.message;
+  }
+}
+
+async function saveAdminSettings() {
+  const autoRead = document.getElementById('autoRead').checked;
+  const autoTyping = document.getElementById('autoTyping').checked;
+  try {
+    await fetch('/admin/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ autoRead, autoTyping })
+    });
+    document.getElementById('actionMsg').textContent = 'Settings saved successfully.';
+  } catch (err) {
+    document.getElementById('actionMsg').textContent = 'Failed to save settings.';
+  }
+}
+
+async function updateCoinBalance() {
+  const number = document.getElementById('coinNumber').value.trim();
+  const amount = Number(document.getElementById('coinAmount').value);
+  const msg = document.getElementById('coinMsg');
+  try {
+    await fetch('/admin/coins', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ number, amount })
+    });
+    msg.textContent = 'Coin balance updated.';
+  } catch (err) {
+    msg.textContent = 'Failed to update coins.';
+  }
+}
+</script>
+</body>
+</html>
