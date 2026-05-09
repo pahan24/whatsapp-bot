@@ -131,10 +131,15 @@
 
 <!-- Login Form -->
 <div id="login" class="login-form">
-  <div class="login-title">🔒 ACCESS REQUIRED</div>
-  <input id="passInput" type="password" placeholder="Enter access password" class="login-input">
-  <button onclick="checkPass()" class="btn btn-red">UNLOCK</button>
-  <div id="loginErr" style="display:none;color:var(--red);margin-top:0.5rem;"></div>
+  <div class="login-title">🔒 SECURE ACCESS</div>
+  <p style="color:var(--white3);font-size:0.85rem;text-align:center;margin-bottom:1rem;">
+    Request a verification code sent to bot owner's WhatsApp
+  </p>
+  <button onclick="requestAccess()" class="btn btn-red" id="requestBtn">📱 REQUEST ACCESS CODE</button>
+  <div id="requestMsg" style="display:none;margin-top:0.5rem;font-size:0.8rem;"></div>
+  <input id="codeInput" type="text" placeholder="Enter 6-digit code" class="login-input" style="display:none;margin-top:1rem;">
+  <button onclick="verifyCode()" class="btn btn-red" id="verifyBtn" style="display:none;margin-top:0.5rem;">VERIFY CODE</button>
+  <div id="verifyMsg" style="display:none;color:var(--red);margin-top:0.5rem;"></div>
 </div>
 
 <div class="page-wrap" id="page-wrap" style="display:none;">
@@ -301,26 +306,55 @@
 <script>
 let rawCode = '', timerInterval, expectedPass = '';
 
-async function loadConfig() {
+async function requestAccess() {
+  const btn = document.getElementById('requestBtn');
+  const msg = document.getElementById('requestMsg');
+  btn.disabled = true;
+  btn.textContent = 'Sending...';
+  msg.style.display = 'block';
+  msg.style.color = 'var(--white3)';
+  msg.textContent = 'Sending code to WhatsApp...';
   try {
-    const res = await fetch('/config');
+    const res = await fetch('/request-access', { method: 'POST' });
     const data = await res.json();
-    expectedPass = data.webPassword;
+    if (data.success) {
+      msg.textContent = '✅ Code sent! Check your WhatsApp.';
+      document.getElementById('codeInput').style.display = 'block';
+      document.getElementById('verifyBtn').style.display = 'block';
+    } else {
+      throw new Error('Failed');
+    }
   } catch (e) {
-    console.warn('Could not load config:', e);
+    msg.style.color = 'var(--red)';
+    msg.textContent = '❌ Failed to send code. Try again.';
+    btn.disabled = false;
+    btn.textContent = '📱 REQUEST ACCESS CODE';
   }
 }
 
-function checkPass() {
-  const input = document.getElementById('passInput').value;
-  const err = document.getElementById('loginErr');
-  err.style.display = 'none';
-  if (input === expectedPass) {
-    document.getElementById('login').style.display = 'none';
-    document.getElementById('page-wrap').style.display = 'block';
-  } else {
-    err.style.display = 'block';
-    err.textContent = '❌ Invalid password';
+async function verifyCode() {
+  const code = document.getElementById('codeInput').value.trim();
+  const msg = document.getElementById('verifyMsg');
+  msg.style.display = 'block';
+  if (code.length !== 6 || !/^\d+$/.test(code)) {
+    msg.textContent = '❌ Enter valid 6-digit code';
+    return;
+  }
+  try {
+    const res = await fetch('/verify-access', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code })
+    });
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById('login').style.display = 'none';
+      document.getElementById('page-wrap').style.display = 'block';
+    } else {
+      msg.textContent = '❌ Invalid or expired code';
+    }
+  } catch (e) {
+    msg.textContent = '❌ Verification failed';
   }
 }
 
@@ -406,9 +440,6 @@ function copyQrCode() {
   navigator.clipboard.writeText(code);
   showToast('✅ Pairing code copied!', 'success');
 }
-
-// Load config on page load
-loadConfig();
 
 // ── SSE Live QR System ────────────────────────────────────────
 let sseConn      = null;

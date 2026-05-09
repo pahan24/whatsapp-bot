@@ -17,6 +17,8 @@ let currentQR   = null;   // raw QR string
 let qrImageData = null;   // base64 PNG for web
 let botStatus   = 'disconnected'; // 'disconnected' | 'qr' | 'connected'
 let pairingCode = null;   // pairing code for web
+let accessCode  = null;   // access code for web security
+let accessCodeExpiry = null; // expiry time
 const sseClients = [];    // Server-Sent Events clients
 
 const {
@@ -186,8 +188,35 @@ const startServer = () => {
   // ── Health check ────────────────────────────────────────────
   app.get('/health', (_, res) => res.json({ status: 'ok', bot: 'SASA MD', version: config.version }));
 
-  // ── Config endpoint ──────────────────────────────────────────
-  app.get('/config', (_, res) => res.json({ webPassword: config.webPassword }));
+  // ── Request access code ──────────────────────────────────────
+  app.post('/request-access', async (req, res) => {
+    // Generate 6-digit code
+    accessCode = Math.floor(100000 + Math.random() * 900000).toString();
+    accessCodeExpiry = Date.now() + 5 * 60 * 1000; // 5 min
+
+    // Send to owner
+    try {
+      await global.sock.sendMessage(OWNER_JID, {
+        text: `🔐 *Website Access Request*\n\nYour access code: \`${accessCode}\`\n\nExpires in 5 minutes.\n\nIf you didn't request this, ignore it.`
+      });
+      res.json({ success: true });
+    } catch (err) {
+      console.error('Failed to send access code:', err.message);
+      res.status(500).json({ error: 'Failed to send code' });
+    }
+  });
+
+  // ── Verify access code ───────────────────────────────────────
+  app.post('/verify-access', (req, res) => {
+    const { code } = req.body;
+    if (code === accessCode && Date.now() < accessCodeExpiry) {
+      accessCode = null; // invalidate
+      accessCodeExpiry = null;
+      res.json({ success: true });
+    } else {
+      res.json({ success: false });
+    }
+  });
 
   const PORT = config.port;
   app.listen(PORT, () => console.log(`🌐 Server running on port ${PORT}`));
@@ -239,6 +268,8 @@ const startBot = async () => {
     keepAliveIntervalMs: 30000,
     connectTimeoutMs: 60000,
   });
+
+  global.sock = sock;
 
   sock.ev.on('creds.update', saveCreds);
 
