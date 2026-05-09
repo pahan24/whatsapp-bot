@@ -56,26 +56,66 @@ const safeRemove = async (p) => {
 };
 
 // ── Session (Heroku support) ──────────────────────────────────
+const safeFirebaseKey = (name) => {
+  if (typeof name !== 'string') return '';
+  return encodeURIComponent(name).replace(/\./g, '%2E');
+};
+const decodeFirebaseKey = (key) => {
+  if (typeof key !== 'string') return key;
+  return decodeURIComponent(key);
+};
+
 const saveSessionToFirebase = async (sessionData) => {
   if (!db) return;
-  const entries = Object.entries(sessionData || {}).map(([name, content]) => ({ name, content }));
-  await safeSet('session/sasa_md', entries);
+  const saved = {};
+  for (const [filename, content] of Object.entries(sessionData || {})) {
+    const key = safeFirebaseKey(filename);
+    if (key) saved[key] = content;
+  }
+  await safeSet('session/sasa_md', saved);
 };
 const getSessionFromFirebase = async () => {
   const data = await safeGet('session/sasa_md');
   if (!data) return null;
-  if (Array.isArray(data)) return data.reduce((acc, item) => {
-    if (item && item.name) acc[item.name] = item.content;
-    return acc;
-  }, {});
-  return data;
+  if (typeof data === 'object' && !Array.isArray(data)) {
+    return Object.entries(data).reduce((acc, [key, content]) => {
+      const filename = decodeFirebaseKey(key);
+      acc[filename] = content;
+      return acc;
+    }, {});
+  }
+  return null;
+};
+
+const incrementCounter = async (path, delta = 1) => {
+  if (!db || !validPath(path)) return;
+  try {
+    await db.ref(path).transaction((current) => {
+      const value = Number(current) || 0;
+      return value + delta;
+    });
+  } catch (err) {
+    console.warn(`⚠️ Firebase transaction failed for path ${path}:`, err.message);
+  }
 };
 
 // ── Users ─────────────────────────────────────────────────────
 const getUser          = (jid) => safeGet(`users/${clean(jid)}`);
 const saveUser         = (jid, d) => safeUpdate(`users/${clean(jid)}`, { ...d, lastSeen: Date.now() });
 const isKnownNumber    = async (jid) => !!(await safeGet(`users/${clean(jid)}/firstSeen`));
-const markFirstContact = (jid, name) => safeUpdate(`users/${clean(jid)}`, { jid, name, firstSeen: Date.now(), lastSeen: Date.now() });
+const markFirstContact = async (jid, name) => {
+  const firstSeen = await safeGet(`users/${clean(jid)}/firstSeen`);
+  if (!firstSeen) {
+    await safeSet(`users/${clean(jid)}`, { jid, name, firstSeen: Date.now(), lastSeen: Date.now() });
+    await incrementCounter('meta/userCount', 1);
+  } else {
+    await safeUpdate(`users/${clean(jid)}`, { jid, name, lastSeen: Date.now() });
+  }
+};
+const getUserCount    = async () => {
+  const count = await safeGet('meta/userCount');
+  return Number(count) || 0;
+};
 
 // ── Inbox ─────────────────────────────────────────────────────
 const saveInboxMsg = (jid, message, name) =>
@@ -140,6 +180,6 @@ module.exports = {
   getSettings, setSetting,
   getRules, addRule, deleteRule,
   saveGroup, groupBan, groupUnban, isGroupBanned,
-  getUsers,
+  getUsers, getUserCount,
   saveWebPass, getWebPass,
 };

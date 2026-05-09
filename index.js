@@ -252,7 +252,7 @@ const startServer = () => {
   app.get('/admin/status', async (_, res) => {
     try {
       const settings = await getSettings();
-      const users = await getUsers();
+      const activeUsers = await getUserCount();
       res.json({
         status: botStatus,
         botName: config.botName,
@@ -260,7 +260,7 @@ const startServer = () => {
         activeBots: botStatus === 'connected' ? 1 : 0,
         autoRead: settings.autoRead ?? config.autoRead,
         autoTyping: settings.autoTyping ?? config.autoTyping,
-        activeUsers: users ? Object.keys(users).length : 0,
+        activeUsers,
       });
     } catch (err) {
       res.status(500).json({ error: 'Admin status unavailable' });
