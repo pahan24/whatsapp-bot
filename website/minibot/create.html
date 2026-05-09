@@ -415,7 +415,15 @@ function handleStatusUpdate(status) {
     showToast('✅ SASA MD connected!', 'success');
     localStorage.setItem('sasa_connected', '1');
   } else if (status === 'disconnected') {
-    setQrStatus('offline', 'Bot disconnected — reconnecting...');
+    setQrStatus('offline', 'Bot disconnected — start pairing');
+    document.getElementById('qrImg').style.display       = 'none';
+    document.getElementById('qrPlaceholder').style.display = 'block';
+    document.getElementById('qrConnected').style.display = 'none';
+    document.getElementById('qrTimerWrap').style.display  = 'none';
+    document.getElementById('qrNote').style.display       = 'none';
+  } else if (status === 'reconnecting') {
+    setQrStatus('connecting', 'Bot reconnecting...');
+    // Keep any existing QR displayed
   }
 }
 

@@ -108,7 +108,7 @@ const startServer = () => {
       if (!fs.existsSync(sp)) fs.mkdirSync(sp, { recursive: true });
       const { state, saveCreds } = await useMultiFileAuthState(sp);
       const { version }          = await fetchLatestBaileysVersion();
-      const sock = makeWASocket({ version, logger: pino({ level: 'silent' }), auth: state, printQRInTerminal: false });
+      const sock = makeWASocket({ version, logger: pino({ level: 'silent' }), auth: state });
       sock.ev.on('creds.update', saveCreds);
       await new Promise(r => setTimeout(r, 2500));
       if (!sock.authState.creds.registered) {
@@ -229,10 +229,11 @@ const startBot = async () => {
       creds: state.creds,
       keys:  makeCacheableSignalKeyStore(state.keys, pino({ level: 'silent' })),
     },
-    // ✅ printQRInTerminal REMOVED — deprecated in new Baileys
     browser: ['SASA MD', 'Chrome', '5.2.0'],
     generateHighQualityLinkPreview: true,
     syncFullHistory: false,
+    keepAliveIntervalMs: 30000,
+    connectTimeoutMs: 60000,
   });
 
   sock.ev.on('creds.update', saveCreds);
@@ -281,14 +282,17 @@ const startBot = async () => {
     if (connection === 'close') {
       const code      = lastDisconnect?.error?.output?.statusCode;
       const reconnect = code !== DisconnectReason.loggedOut;
-      botStatus       = 'disconnected';
-      currentQR       = null;
-      qrImageData     = null;
+      botStatus       = reconnect ? 'reconnecting' : 'disconnected';
+      // Don't clear QR if reconnecting, so website can show it
+      if (!reconnect) {
+        currentQR   = null;
+        qrImageData = null;
+      }
       console.log(`🔴 Disconnected (code ${code}). Reconnect: ${reconnect}`);
       sseClients.forEach(res => {
-        try { res.write(`data: ${JSON.stringify({ type: 'status', status: 'disconnected' })}\n\n`); } catch {}
+        try { res.write(`data: ${JSON.stringify({ type: 'status', status: botStatus })}\n\n`); } catch {}
       });
-      if (reconnect) setTimeout(startBot, 5000);
+      if (reconnect) setTimeout(startBot, 30000);
     }
 
     // ── Connected ─────────────────────────────────────────────
