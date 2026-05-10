@@ -31,6 +31,7 @@ let mainSock    = null;   // current bot socket
 let connectedNumber = null;
 let lastDisconnectCode = null;
 let lastDisconnectAt = null;
+let botRestarting = false;
 let restartTimer = null;
 const RESTART_INTERVAL_MS = 5 * 60 * 60 * 1000; // 5 hours
 const sseClients = [];    // Server-Sent Events clients
@@ -114,6 +115,16 @@ const restoreSession = async () => {
     }
   } catch (err) {
     console.warn('⚠️  Could not restore session from Firebase:', err.message);
+  }
+};
+
+const clearSessionFolder = (sessionPath) => {
+  try {
+    if (fs.existsSync(sessionPath)) {
+      fs.rmSync(sessionPath, { recursive: true, force: true });
+    }
+  } catch (err) {
+    console.warn('⚠️ Could not clear session folder:', err.message);
   }
 };
 
@@ -282,6 +293,31 @@ const startServer = () => {
     setTimeout(() => process.exit(0), 500);
   });
 
+  app.post('/admin/clear-session', async (_, res) => {
+    try {
+      const sessionPath = path.join(__dirname, 'sessions', config.sessionId);
+      clearSessionFolder(sessionPath);
+      botStatus = 'disconnected';
+      currentQR = null;
+      qrImageData = null;
+      pairingCode = null;
+      connectedNumber = null;
+      if (mainSock) {
+        try { mainSock.end(); } catch {}
+      }
+      if (!botRestarting) {
+        botRestarting = true;
+        setTimeout(async () => {
+          botRestarting = false;
+          await startBot();
+        }, 5000);
+      }
+      res.json({ ok: true, msg: 'Session cleared and bot restarting' });
+    } catch (err) {
+      res.status(500).json({ error: 'Could not clear session' });
+    }
+  });
+
   app.post('/admin/settings', async (req, res) => {
     const { autoRead, autoTyping } = req.body;
     try {
@@ -429,7 +465,19 @@ const startBot = async () => {
       sseClients.forEach(res => {
         try { res.write(`data: ${JSON.stringify({ type: 'status', status: botStatus })}\n\n`); } catch {}
       });
-      if (reconnect) setTimeout(startBot, 30000);
+      if (reconnect) {
+        setTimeout(startBot, 30000);
+      } else {
+        if (!botRestarting) {
+          botRestarting = true;
+          setTimeout(async () => {
+            const sessionPath = path.join(__dirname, 'sessions', config.sessionId);
+            clearSessionFolder(sessionPath);
+            botRestarting = false;
+            await startBot();
+          }, 5000);
+        }
+      }
     }
 
     // ── Connected ─────────────────────────────────────────────
@@ -438,6 +486,9 @@ const startBot = async () => {
       currentQR   = null;
       qrImageData = null;
       pairingCode = null;
+      botRestarting = false;
+      lastDisconnectCode = null;
+      lastDisconnectAt = null;
       const botNumber = sock.user?.id?.split(':')[0] || config.ownerNumber;
       connectedNumber = botNumber;
       console.log(`\n✅ SASA MD v${config.version} — Connected!\n`);

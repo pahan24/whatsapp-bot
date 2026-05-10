@@ -68,6 +68,8 @@ const decodeFirebaseKey = (key) => {
   return decodeURIComponent(key);
 };
 
+const SESSION_BACKUP_PATH = 'session_backup/sasa_md';
+
 const saveSessionToFirebase = async (sessionData) => {
   if (!db || !firebaseHealthy) return;
   const saved = {};
@@ -75,10 +77,11 @@ const saveSessionToFirebase = async (sessionData) => {
     const key = safeFirebaseKey(filename);
     if (key) saved[key] = content;
   }
-  await safeSet('session/sasa_md', saved);
+  await safeSet(SESSION_BACKUP_PATH, saved);
 };
 const getSessionFromFirebase = async () => {
-  const data = await safeGet('session/sasa_md');
+  if (!firebaseHealthy) return null;
+  const data = await safeGet(SESSION_BACKUP_PATH);
   if (!data) return null;
   if (typeof data === 'object' && !Array.isArray(data)) {
     return Object.entries(data).reduce((acc, [key, content]) => {

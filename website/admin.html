@@ -40,9 +40,11 @@
 
     <div class="status-row">
       <div class="status-item"><h3>Bot Status</h3><p id="statusBot">—</p></div>
-      <div class="status-item"><h3>Active Bots</h3><p id="statusActiveBots">—</p></div>
-      <div class="status-item"><h3>Active Users</h3><p id="statusUsers">—</p></div>
+      <div class="status-item"><h3>Connected Number</h3><p id="statusNumber">—</p></div>
+      <div class="status-item"><h3>Last Disconnect</h3><p id="statusDisconnect">—</p></div>
       <div class="status-item"><h3>Restart Timer</h3><p id="statusRestart">Scheduled every 5h</p></div>
+      <div class="status-item"><h3>Active Users</h3><p id="statusUsers">—</p></div>
+      <div class="status-item"><h3>Active Bots</h3><p id="statusActiveBots">—</p></div>
     </div>
 
     <div class="card">
@@ -50,6 +52,8 @@
       <div style="display:flex;gap:1rem;flex-wrap:wrap;">
         <button class="btn" onclick="triggerRestart()">Restart Bot</button>
         <button class="btn-secondary" onclick="requestPairing()">Generate Pairing Code</button>
+        <button class="btn-secondary" onclick="clearBotSession()">Reset Session</button>
+        <button class="btn-secondary" onclick="loadAdminStatus()">Refresh Status</button>
       </div>
       <p id="actionMsg" style="margin-top:1rem;color:#ccc;"></p>
     </div>
@@ -97,11 +101,26 @@ async function loadAdminStatus() {
     document.getElementById('statusBot').textContent = data.status;
     document.getElementById('statusActiveBots').textContent = data.activeBots;
     document.getElementById('statusUsers').textContent = data.activeUsers;
+    document.getElementById('statusNumber').textContent = data.connectedNumber || '—';
+    document.getElementById('statusDisconnect').textContent = data.lastDisconnectCode ? `${data.lastDisconnectCode} (${new Date(data.lastDisconnectAt).toLocaleString()})` : '—';
     document.getElementById('panelInfo').textContent = `${data.botName} • v${data.version}`;
     document.getElementById('autoRead').checked = !!data.autoRead;
     document.getElementById('autoTyping').checked = !!data.autoTyping;
   } catch (err) {
     document.getElementById('panelInfo').textContent = 'Unable to load admin data.';
+  }
+}
+
+async function clearBotSession() {
+  document.getElementById('actionMsg').textContent = 'Resetting session...';
+  try {
+    const res = await fetch('/admin/clear-session', { method: 'POST' });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Reset failed');
+    document.getElementById('actionMsg').textContent = 'Session reset requested. Bot restarting.';
+    setTimeout(loadAdminStatus, 3000);
+  } catch (err) {
+    document.getElementById('actionMsg').textContent = err.message;
   }
 }
 
