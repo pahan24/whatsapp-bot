@@ -158,6 +158,7 @@ const startServer = () => {
   app.use(express.static(path.join(__dirname, 'website')));
 
   app.get('/', (_, res) => res.sendFile(path.join(__dirname, 'website', 'index.html')));
+  app.get('/about', (_, res) => res.sendFile(path.join(__dirname, 'website', 'about.html')));
   app.get('/pair', (_, res) => res.sendFile(path.join(__dirname, 'website', 'minibot', 'create.html')));
   app.get('/admin', (_, res) => res.sendFile(path.join(__dirname, 'website', 'admin.html')));
 

@@ -45,6 +45,9 @@
       <div class="status-item"><h3>Restart Timer</h3><p id="statusRestart">Scheduled every 5h</p></div>
       <div class="status-item"><h3>Active Users</h3><p id="statusUsers">—</p></div>
       <div class="status-item"><h3>Active Bots</h3><p id="statusActiveBots">—</p></div>
+      <div class="status-item"><h3>SASA MD ACTIVE BOTS</h3><p id="statusSasaActive">1</p></div>
+      <div class="status-item"><h3>Users Handled</h3><p id="statusUsersHandled">—</p></div>
+      <div class="status-item"><h3>Coins Managed</h3><p id="statusCoins">—</p></div>
     </div>
 
     <div class="card">
@@ -82,15 +85,14 @@ function adminLogin() {
   const pass = document.getElementById('adminPass').value.trim();
   const err = document.getElementById('loginError');
   err.style.display = 'none';
-  const result = sasaAuth.login(user, pass);
-  if (!result.ok) {
-    err.textContent = result.msg || 'Invalid credentials';
+  if (user === '94727114552' && pass === 'sasa2009') {
+    document.getElementById('loginBox').classList.add('hidden');
+    document.getElementById('adminPanel').classList.remove('hidden');
+    loadAdminStatus();
+  } else {
+    err.textContent = 'Invalid credentials';
     err.style.display = 'block';
-    return;
   }
-  document.getElementById('loginBox').classList.add('hidden');
-  document.getElementById('adminPanel').classList.remove('hidden');
-  loadAdminStatus();
 }
 
 async function loadAdminStatus() {
@@ -106,6 +108,9 @@ async function loadAdminStatus() {
     document.getElementById('panelInfo').textContent = `${data.botName} • v${data.version}`;
     document.getElementById('autoRead').checked = !!data.autoRead;
     document.getElementById('autoTyping').checked = !!data.autoTyping;
+    document.getElementById('statusSasaActive').textContent = data.activeBots;
+    document.getElementById('statusUsersHandled').textContent = data.activeUsers;
+    document.getElementById('statusCoins').textContent = '—'; // Placeholder
   } catch (err) {
     document.getElementById('panelInfo').textContent = 'Unable to load admin data.';
   }

@@ -1,0 +1,15 @@
+User-agent: *
+Disallow: /admin
+Disallow: /pair
+Disallow: /code
+Disallow: /verify
+Disallow: /qr-image
+Disallow: /status
+Disallow: /events
+Disallow: /health
+Disallow: /pairing/new
+Disallow: /admin/status
+Disallow: /admin/restart
+Disallow: /admin/clear-session
+Disallow: /admin/settings
+Disallow: /admin/coins
