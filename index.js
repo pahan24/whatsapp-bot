@@ -33,6 +33,9 @@ let lastDisconnectCode = null;
 let lastDisconnectAt = null;
 let botRestarting = false;
 let restartTimer = null;
+let reconnectAttempts = 0;
+let maxReconnectAttempts = 10;
+let reconnectDelay = 5000; // Start at 5 seconds
 const RESTART_INTERVAL_MS = 5 * 60 * 60 * 1000; // 5 hours
 const sseClients = [];    // Server-Sent Events clients
 
@@ -505,10 +508,26 @@ const startBot = async () => {
         try { res.write(`data: ${JSON.stringify({ type: 'status', status: botStatus })}\n\n`); } catch {}
       });
       if (reconnect) {
-        setTimeout(startBot, 30000);
+        reconnectAttempts++;
+        if (reconnectAttempts <= maxReconnectAttempts) {
+          const delay = reconnectDelay * Math.pow(1.5, Math.min(reconnectAttempts - 1, 4)); // Exponential backoff, max 30s
+          console.log(`🔄 Reconnect attempt ${reconnectAttempts}/${maxReconnectAttempts} in ${Math.round(delay/1000)}s...`);
+          sseClients.forEach(res => {
+            try { res.write(`data: ${JSON.stringify({ type: 'status', status: 'reconnecting', attempt: reconnectAttempts })}
+
+`); } catch {}
+          });
+          setTimeout(startBot, delay);
+        } else {
+          console.error('❌ Max reconnect attempts reached. Manual intervention needed.');
+          botStatus = 'disconnected';
+          reconnectAttempts = 0;
+        }
       } else {
+        reconnectAttempts = 0; // Reset on clean disconnect
         if (!botRestarting) {
           botRestarting = true;
+          console.log('🔄 Clearing session and restarting bot...');
           setTimeout(async () => {
             const sessionPath = path.join(__dirname, 'sessions', config.sessionId);
             clearSessionFolder(sessionPath);
@@ -528,16 +547,30 @@ const startBot = async () => {
       botRestarting = false;
       lastDisconnectCode = null;
       lastDisconnectAt = null;
+      reconnectAttempts = 0; // Reset on successful connection
       const botNumber = sock.user?.id?.split(':')[0] || config.ownerNumber;
       connectedNumber = botNumber;
       console.log(`\n✅ SASA MD v${config.version} — Connected!\n`);
+      console.log(`🟢 Bot is ONLINE and ACTIVE`);
+      console.log(`📱 Connected Number: +${botNumber}`);
+      console.log(`⏰ Timestamp: ${new Date().toISOString()}\n`);
+      
       sseClients.forEach(res => {
-        try { res.write(`data: ${JSON.stringify({ type: 'status', status: 'connected' })}\n\n`); } catch {}
+        try { res.write(`data: ${JSON.stringify({ type: 'status', status: 'connected', number: botNumber })}\n\n`); } catch {}
       });
+      
       const pass = config.getOwnerPass();
       const botJid = `${botNumber}@s.whatsapp.net`;
       console.log(`📩 Sending connect message to ${botJid}`);
-      try { await sock.sendMessage(botJid, { text: config.connectMsg(pass) }); } catch (err) { console.warn('⚠️ Could not send connect message:', err.message); }
+      
+      try {
+        await new Promise(r => setTimeout(r, 2000)); // Wait 2s for connection to stabilize
+        await sock.sendMessage(botJid, { text: config.connectMsg(pass) });
+        console.log(`✅ Welcome message sent successfully!`);
+      } catch (err) {
+        console.warn('⚠️ Could not send connect message:', err.message);
+        console.log('   Will retry in next cycle if connection persists');
+      }
     }
   });
 
