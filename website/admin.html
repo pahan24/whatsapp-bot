@@ -76,6 +76,14 @@
         <p id="coinMsg" style="margin-top:0.8rem;color:#ccc;"></p>
       </div>
     </div>
+
+    <div class="card">
+      <h2>User Management</h2>
+      <div class="field"><label>Search Users</label><input id="userSearch" placeholder="Name or number" oninput="filterUsers()"/></div>
+      <div id="userList" style="max-height:400px;overflow-y:auto;margin-top:1rem;">
+        <p>Loading users...</p>
+      </div>
+    </div>
   </div>
 </div>
 <script src="js/app.js"></script>
@@ -175,6 +183,78 @@ async function updateCoinBalance() {
     msg.textContent = 'Failed to update coins.';
   }
 }
+
+let allUsers = [];
+
+async function loadUsers() {
+  try {
+    const res = await fetch('/admin/users');
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    allUsers = data.users;
+    renderUsers(allUsers);
+  } catch (err) {
+    document.getElementById('userList').innerHTML = '<p>Failed to load users.</p>';
+  }
+}
+
+function renderUsers(users) {
+  const list = document.getElementById('userList');
+  if (!users.length) {
+    list.innerHTML = '<p>No users found.</p>';
+    return;
+  }
+  list.innerHTML = users.map(u => `
+    <div style="border:1px solid rgba(255,255,255,0.1);padding:0.5rem;margin-bottom:0.5rem;border-radius:8px;">
+      <div><strong>${u.name || 'Unknown'}</strong> (${u.jid.replace('@s.whatsapp.net', '')})</div>
+      <div style="font-size:0.8rem;color:#ccc;">First: ${new Date(u.firstSeen).toLocaleDateString()} | Last: ${new Date(u.lastSeen).toLocaleDateString()}</div>
+      <div style="margin-top:0.5rem;">
+        ${u.banned ? `<button class="btn-secondary" onclick="unbanUser('${u.jid}')">Unban</button>` : `<button class="btn" onclick="banUser('${u.jid}')">Ban</button>`}
+      </div>
+    </div>
+  `).join('');
+}
+
+function filterUsers() {
+  const query = document.getElementById('userSearch').value.toLowerCase();
+  const filtered = allUsers.filter(u => 
+    u.name?.toLowerCase().includes(query) || 
+    u.jid.includes(query)
+  );
+  renderUsers(filtered);
+}
+
+async function banUser(jid) {
+  try {
+    await fetch('/admin/ban', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jid, reason: 'Banned from admin panel' })
+    });
+    loadUsers();
+  } catch (err) {
+    alert('Failed to ban user');
+  }
+}
+
+async function unbanUser(jid) {
+  try {
+    await fetch('/admin/unban', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jid })
+    });
+    loadUsers();
+  } catch (err) {
+    alert('Failed to unban user');
+  }
+}
+
+// Load users when panel loads
+document.addEventListener('DOMContentLoaded', () => {
+  if (document.getElementById('adminPanel').classList.contains('hidden')) return;
+  loadUsers();
+});
 </script>
 </body>
 </html>

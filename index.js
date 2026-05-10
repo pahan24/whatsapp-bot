@@ -15,10 +15,10 @@ require('dotenv').config();
 const {
   initFirebase,
   saveSessionToFirebase, getSessionFromFirebase,
-  isBanned,
+  isBanned, banUser, unbanUser,
   isKnownNumber, markFirstContact, saveInboxMsg,
   getSettings, setSetting,
-  addCoins, getUserCount,
+  addCoins, getUserCount, getUsers,
 } = require('./firebase');
 const config = require('./config');
 
@@ -285,6 +285,44 @@ const startServer = () => {
       });
     } catch (err) {
       res.status(500).json({ error: 'Admin status unavailable' });
+    }
+  });
+
+  app.get('/admin/users', async (_, res) => {
+    try {
+      const users = await promiseTimeout(getUsers(), 3000, {});
+      const userList = Object.values(users).map(u => ({
+        jid: u.jid,
+        name: u.name,
+        firstSeen: u.firstSeen,
+        lastSeen: u.lastSeen,
+        banned: u.banned || false,
+      }));
+      res.json({ users: userList });
+    } catch (err) {
+      res.status(500).json({ error: 'Could not fetch users' });
+    }
+  });
+
+  app.post('/admin/ban', async (req, res) => {
+    const { jid, reason } = req.body;
+    if (!jid) return res.status(400).json({ error: 'Missing jid' });
+    try {
+      await banUser(jid, reason);
+      res.json({ ok: true });
+    } catch (err) {
+      res.status(500).json({ error: 'Could not ban user' });
+    }
+  });
+
+  app.post('/admin/unban', async (req, res) => {
+    const { jid } = req.body;
+    if (!jid) return res.status(400).json({ error: 'Missing jid' });
+    try {
+      await unbanUser(jid);
+      res.json({ ok: true });
+    } catch (err) {
+      res.status(500).json({ error: 'Could not unban user' });
     }
   });
 
