@@ -2,43 +2,17 @@ const admin = require('firebase-admin');
 require('dotenv').config();
 
 let db = null;
-let firebaseHealthy = true;
-const DB_ENABLED = process.env.FIREBASE_ENABLED === 'true';
-const fakeDB = {
-  users: {},
-  coins: {},
-  settings: {},
-  channels: {},
-  autoreplies: {},
-  groups: {},
-  webpass: {},
-  meta: { userCount: 0 },
-  sessionBackup: {},
-};
 
 const initFirebase = () => {
-  if (!DB_ENABLED) {
-    console.log('ℹ️ Firebase disabled by FIREBASE_ENABLED=false. Running with in-memory fallback only.');
-    firebaseHealthy = false;
-    return;
-  }
   try {
-    const projectId = process.env.FIREBASE_PROJECT_ID;
-    const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-    const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
-    const databaseURL = process.env.FIREBASE_DATABASE_URL;
-
-    if (!projectId || !clientEmail || !privateKey || !databaseURL) {
-      firebaseHealthy = false;
-      console.warn('⚠️  Firebase not initialized: missing required env vars.');
-      console.warn('   Required: FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY, FIREBASE_DATABASE_URL');
-      return;
-    }
-
     if (!admin.apps.length) {
       admin.initializeApp({
-        credential: admin.credential.cert({ projectId, clientEmail, privateKey }),
-        databaseURL,
+        credential: admin.credential.cert({
+          projectId:   process.env.FIREBASE_PROJECT_ID,
+          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+          privateKey:  process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+        }),
+        databaseURL: process.env.FIREBASE_DATABASE_URL,
       });
     }
     db = admin.database();
@@ -50,168 +24,45 @@ const initFirebase = () => {
 };
 
 const clean = (jid) => jid?.replace(/[^0-9]/g, '') || '';
-const validPath = (p) => typeof p === 'string' && p.length > 0;
 
-const safeGet    = async (p) => {
-  if (!db || !firebaseHealthy || !validPath(p)) return null;
-  try {
-    return (await db.ref(p).once('value')).val();
-  } catch (err) {
-    firebaseHealthy = false;
-    console.warn(`⚠️ Firebase safeGet failed for path ${p}:`, err && err.message ? err.message : err);
-    return null;
-  }
-};
-const safeSet    = async (p, d) => {
-  if (!db || !firebaseHealthy || !validPath(p)) return;
-  try { await db.ref(p).set(d); } catch (err) { firebaseHealthy = false; console.warn(`⚠️ Firebase safeSet failed for path ${p}:`, err && err.message ? err.message : err); }
-};
-const safeUpdate = async (p, d) => {
-  if (!db || !firebaseHealthy || !validPath(p)) return;
-  try { await db.ref(p).update(d); } catch (err) { firebaseHealthy = false; console.warn(`⚠️ Firebase safeUpdate failed for path ${p}:`, err && err.message ? err.message : err); }
-};
-const safeRemove = async (p) => {
-  if (!db || !firebaseHealthy || !validPath(p)) return;
-  try { await db.ref(p).remove(); } catch (err) { firebaseHealthy = false; console.warn(`⚠️ Firebase safeRemove failed for path ${p}:`, err && err.message ? err.message : err); }
-};
+const safeGet    = async (p) => { if (!db) return null; try { return (await db.ref(p).once('value')).val(); } catch { return null; } };
+const safeSet    = async (p, d) => { if (!db) return; try { await db.ref(p).set(d); } catch {} };
+const safeUpdate = async (p, d) => { if (!db) return; try { await db.ref(p).update(d); } catch {} };
+const safeRemove = async (p) => { if (!db) return; try { await db.ref(p).remove(); } catch {} };
 
 // ── Session (Heroku support) ──────────────────────────────────
-const safeFirebaseKey = (name) => {
-  if (typeof name !== 'string') return '';
-  return encodeURIComponent(name).replace(/\./g, '%2E');
-};
-const decodeFirebaseKey = (key) => {
-  if (typeof key !== 'string') return key;
-  return decodeURIComponent(key);
-};
-
-const SESSION_BACKUP_PATH = 'session_backup/sasa_md';
-
 const saveSessionToFirebase = async (sessionData) => {
-  if (!DB_ENABLED || !firebaseHealthy) {
-    fakeDB.sessionBackup = {};
-    for (const [filename, content] of Object.entries(sessionData || {})) {
-      const key = safeFirebaseKey(filename);
-      if (key) fakeDB.sessionBackup[key] = content;
-    }
-    return;
-  }
-  const saved = {};
-  for (const [filename, content] of Object.entries(sessionData || {})) {
-    const key = safeFirebaseKey(filename);
-    if (key) saved[key] = content;
-  }
-  await safeSet(SESSION_BACKUP_PATH, saved);
+  if (!db) return;
+  await safeSet('session/sasa_md', sessionData);
 };
-const getSessionFromFirebase = async () => {
-  if (!DB_ENABLED || !firebaseHealthy) {
-    const data = fakeDB.sessionBackup;
-    if (!data) return null;
-    return Object.entries(data).reduce((acc, [key, content]) => {
-      const filename = decodeFirebaseKey(key);
-      if (filename) acc[filename] = content;
-      return acc;
-    }, {});
-  }
-  const data = await safeGet(SESSION_BACKUP_PATH);
-  if (!data) return null;
-  if (typeof data === 'object' && !Array.isArray(data)) {
-    return Object.entries(data).reduce((acc, [key, content]) => {
-      const filename = decodeFirebaseKey(key);
-      acc[filename] = content;
-      return acc;
-    }, {});
-  }
-  return null;
-};
-
-const incrementCounter = async (path, delta = 1) => {
-  if (!db || !validPath(path)) return;
-  try {
-    await db.ref(path).transaction((current) => {
-      const value = Number(current) || 0;
-      return value + delta;
-    });
-  } catch (err) {
-    console.warn(`⚠️ Firebase transaction failed for path ${path}:`, err.message);
-  }
-};
+const getSessionFromFirebase = async () => safeGet('session/sasa_md');
 
 // ── Users ─────────────────────────────────────────────────────
-const getUser          = (jid) => DB_ENABLED ? safeGet(`users/${clean(jid)}`) : Promise.resolve(fakeDB.users[clean(jid)] || null);
-const saveUser         = (jid, d) => DB_ENABLED ? safeUpdate(`users/${clean(jid)}`, { ...d, lastSeen: Date.now() }) : Promise.resolve(fakeDB.users[clean(jid)] = { ...fakeDB.users[clean(jid)], ...d, lastSeen: Date.now() });
-const isKnownNumber    = async (jid) => {
-  if (DB_ENABLED) return !!(await safeGet(`users/${clean(jid)}/firstSeen`));
-  return !!fakeDB.users[clean(jid)];
-};
-const markFirstContact = async (jid, name) => {
-  if (!DB_ENABLED) {
-    const key = clean(jid);
-    if (!fakeDB.users[key]) {
-      fakeDB.users[key] = { jid, name, firstSeen: Date.now(), lastSeen: Date.now() };
-      fakeDB.meta.userCount += 1;
-    } else {
-      fakeDB.users[key] = { ...fakeDB.users[key], jid, name, lastSeen: Date.now() };
-    }
-    return;
-  }
-  const firstSeen = await safeGet(`users/${clean(jid)}/firstSeen`);
-  if (!firstSeen) {
-    await safeSet(`users/${clean(jid)}`, { jid, name, firstSeen: Date.now(), lastSeen: Date.now() });
-    await incrementCounter('meta/userCount', 1);
-  } else {
-    await safeUpdate(`users/${clean(jid)}`, { jid, name, lastSeen: Date.now() });
-  }
-};
-const getUserCount    = async () => {
-  if (!DB_ENABLED) return fakeDB.meta.userCount;
-  const count = await safeGet('meta/userCount');
-  return Number(count) || 0;
-};
+const getUser          = (jid) => safeGet(`users/${clean(jid)}`);
+const saveUser         = (jid, d) => safeUpdate(`users/${clean(jid)}`, { ...d, lastSeen: Date.now() });
+const isKnownNumber    = async (jid) => !!(await safeGet(`users/${clean(jid)}/firstSeen`));
+const markFirstContact = (jid, name) => safeUpdate(`users/${clean(jid)}`, { jid, name, firstSeen: Date.now(), lastSeen: Date.now() });
 
 // ── Inbox ─────────────────────────────────────────────────────
-const saveInboxMsg = (jid, message, name) => {
-  if (!DB_ENABLED) return Promise.resolve();
-  return safeSet(`inbox/${clean(jid)}/${Date.now()}`, { jid, name, message, time: Date.now(), read: false });
-};
+const saveInboxMsg = (jid, message, name) =>
+  safeSet(`inbox/${clean(jid)}/${Date.now()}`, { jid, name, message, time: Date.now(), read: false });
 
 // ── Coins ─────────────────────────────────────────────────────
-const getCoins    = async (jid) => {
-  const key = clean(jid);
-  if (!DB_ENABLED) return fakeDB.coins[key] || { balance: 0, spent: 0, claimedDaily: null };
-  return (await safeGet(`coins/${key}`)) || { balance: 0, spent: 0, claimedDaily: null };
-};
-const updateCoins = (jid, d) => {
-  const key = clean(jid);
-  if (!DB_ENABLED) {
-    fakeDB.coins[key] = { ...fakeDB.coins[key], ...d };
-    return Promise.resolve();
-  }
-  return safeUpdate(`coins/${key}`, d);
-};
+const getCoins    = async (jid) => (await safeGet(`coins/${clean(jid)}`)) || { balance: 0, spent: 0, claimedDaily: null };
+const updateCoins = (jid, d)    => safeUpdate(`coins/${clean(jid)}`, d);
 const addCoins    = async (jid, amount) => {
   const d = await getCoins(jid);
   await updateCoins(jid, { balance: (d.balance || 0) + amount });
 };
 
 // ── Channels ──────────────────────────────────────────────────
-const getChannelList  = async () => DB_ENABLED ? (await safeGet('channels')) || {} : fakeDB.channels;
-const addChannel      = (link, name) => {
-  const id = link.split('/').pop();
-  if (!DB_ENABLED) { fakeDB.channels[id] = { link, name, active: true, addedAt: Date.now() }; return Promise.resolve(); }
-  return safeSet(`channels/${id}`, { link, name, active: true, addedAt: Date.now() });
-};
-const removeChannel   = (id) => DB_ENABLED ? safeRemove(`channels/${id}`) : Promise.resolve(delete fakeDB.channels[id]);
+const getChannelList  = async () => (await safeGet('channels')) || {};
+const addChannel      = (link, name) => safeSet(`channels/${link.split('/').pop()}`, { link, name, active: true, addedAt: Date.now() });
+const removeChannel   = (id) => safeRemove(`channels/${id}`);
 const logChannelReact = async (jid, channelId, coins) => {
-  if (!DB_ENABLED) {
-    await addCoins(jid, coins);
-    return;
-  }
   await safeSet(`reactions/${channelId}/${clean(jid)}/${Date.now()}`, { jid, coins, time: Date.now() });
   await addCoins(jid, coins);
 };
-
-const getUsers = async () => DB_ENABLED ? (await safeGet('users')) || {} : fakeDB.users;
 
 // ── Ban / Sudo ────────────────────────────────────────────────
 const isBanned   = async (jid) => !!(await safeGet(`banned/${clean(jid)}`));
@@ -222,45 +73,27 @@ const addSudo    = (jid) => safeSet(`sudo/${clean(jid)}`, { jid, time: Date.now(
 const removeSudo = (jid) => safeRemove(`sudo/${clean(jid)}`);
 
 // ── Settings ──────────────────────────────────────────────────
-const getSettings = async () => DB_ENABLED ? (await safeGet('settings')) || {} : fakeDB.settings;
-const setSetting  = (key, val) => {
-  if (!DB_ENABLED) {
-    fakeDB.settings[key] = val; return Promise.resolve();
-  }
-  return safeSet(`settings/${key}`, val);
-};
+const getSettings = async () => (await safeGet('settings')) || {};
+const setSetting  = (key, val) => safeSet(`settings/${key}`, val);
 
 // ── Auto replies ──────────────────────────────────────────────
-const getRules   = async () => DB_ENABLED ? (await safeGet('autoreplies')) || {} : fakeDB.autoreplies;
-const addRule    = (keyword, reply, type = 'TEXT') => {
-  if (!DB_ENABLED) {
-    const id = Date.now().toString(); fakeDB.autoreplies[id] = { keyword, reply, type, active: true, created: Date.now() }; return Promise.resolve();
-  }
-  return safeSet(`autoreplies/${Date.now()}`, { keyword, reply, type, active: true, created: Date.now() });
-};
-const deleteRule = (id) => DB_ENABLED ? safeRemove(`autoreplies/${id}`) : Promise.resolve(delete fakeDB.autoreplies[id]);
+const getRules   = async () => (await safeGet('autoreplies')) || {};
+const addRule    = (keyword, reply, type = 'TEXT') =>
+  safeSet(`autoreplies/${Date.now()}`, { keyword, reply, type, active: true, created: Date.now() });
+const deleteRule = (id) => safeRemove(`autoreplies/${id}`);
 
 // ── Groups ────────────────────────────────────────────────────
-const saveGroup   = (gid, d) => DB_ENABLED ? safeUpdate(`groups/${gid.replace('@', '_')}`, { ...d, updated: Date.now() }) : Promise.resolve(fakeDB.groups[gid.replace('@', '_')] = { ...fakeDB.groups[gid.replace('@', '_')], ...d, updated: Date.now() });
-const groupBan    = (gid, jid) => DB_ENABLED ? safeSet(`groups/${gid.replace('@', '_')}/banned/${clean(jid)}`, { jid, time: Date.now() }) : Promise.resolve(fakeDB.groups[gid.replace('@', '_')] = { ...fakeDB.groups[gid.replace('@', '_')], banned: { ...(fakeDB.groups[gid.replace('@', '_')]?.banned || {}), [clean(jid)]: { jid, time: Date.now() } } });
-const groupUnban  = (gid, jid) => DB_ENABLED ? safeRemove(`groups/${gid.replace('@', '_')}/banned/${clean(jid)}`) : Promise.resolve(delete fakeDB.groups[gid.replace('@', '_')]?.banned?.[clean(jid)]);
-const isGroupBanned = async (gid, jid) => {
-  if (!DB_ENABLED) return !!fakeDB.groups[gid.replace('@', '_')]?.banned?.[clean(jid)];
-  return !!(await safeGet(`groups/${gid.replace('@', '_')}/banned/${clean(jid)}`));
-};
+const saveGroup   = (gid, d) => safeUpdate(`groups/${gid.replace('@', '_')}`, { ...d, updated: Date.now() });
+const groupBan    = (gid, jid) => safeSet(`groups/${gid.replace('@', '_')}/banned/${clean(jid)}`, { jid, time: Date.now() });
+const groupUnban  = (gid, jid) => safeRemove(`groups/${gid.replace('@', '_')}/banned/${clean(jid)}`);
+const isGroupBanned = async (gid, jid) => !!(await safeGet(`groups/${gid.replace('@', '_')}/banned/${clean(jid)}`));
 
 // ── Web password ──────────────────────────────────────────────
-const saveWebPass = (jid, pass) => {
-  if (!DB_ENABLED) { fakeDB.webpass[clean(jid)] = { pass, time: Date.now() }; return Promise.resolve(); }
-  return safeSet(`webpass/${clean(jid)}`, { pass, time: Date.now() });
-};
-const getWebPass  = async (jid) => {
-  if (!DB_ENABLED) return fakeDB.webpass[clean(jid)]?.pass;
-  return (await safeGet(`webpass/${clean(jid)}`))?.pass;
-};
+const saveWebPass = (jid, pass) => safeSet(`webpass/${clean(jid)}`, { pass, time: Date.now() });
+const getWebPass  = async (jid) => (await safeGet(`webpass/${clean(jid)}`))?.pass;
 
 module.exports = {
-  initFirebase,
+  initFirebase, getDb,
   saveSessionToFirebase, getSessionFromFirebase,
   getUser, saveUser, isKnownNumber, markFirstContact,
   saveInboxMsg,
@@ -271,6 +104,77 @@ module.exports = {
   getSettings, setSetting,
   getRules, addRule, deleteRule,
   saveGroup, groupBan, groupUnban, isGroupBanned,
-  getUsers, getUserCount,
   saveWebPass, getWebPass,
+  registerBot: null, updateBotStatus: null, getBots: null,
+  getUsers: null, addCoinsAdmin: null, getTotalStats: null,
 };
+
+// ─── Admin functions ──────────────────────────────────────────
+const registerBot = async (number, data) => {
+  const clean = number.replace(/\D/g, '');
+  await safeUpdate(`bots/${clean}`, { ...data, number: clean, updatedAt: Date.now() });
+  // update active count
+  const bots = await safeGet('bots') || {};
+  const activeCount = Object.values(bots).filter(b => b.status === 'active').length + 1;
+  await safeSet('stats/activeBots', activeCount);
+};
+
+const updateBotStatus = async (id, status) => {
+  await safeUpdate(`bots/${id}`, { status, updatedAt: Date.now() });
+};
+
+const getBots = async () => {
+  const data = await safeGet('bots') || {};
+  return Object.entries(data).map(([id, v]) => ({ id, ...v }));
+};
+
+const getUsers = async () => {
+  const users = await safeGet('users') || {};
+  const coins = await safeGet('coins') || {};
+  return Object.entries(users).map(([id, u]) => ({
+    id, ...u,
+    balance: coins[id]?.balance || 0,
+    spent:   coins[id]?.spent   || 0,
+  }));
+};
+
+const addCoinsAdmin = async (number, amount, action = 'add') => {
+  const clean = number.replace(/\D/g, '');
+  const jid   = `${clean}@s.whatsapp.net`;
+  const data  = await getCoins(jid);
+  const newBal = action === 'add'
+    ? (data.balance || 0) + amount
+    : Math.max(0, (data.balance || 0) - amount);
+  await updateCoins(jid, { balance: newBal });
+  return { number: clean, balance: newBal, action, amount };
+};
+
+const getTotalStats = async () => {
+  const [users, bots, inbox, coins, stats] = await Promise.all([
+    safeGet('users'), safeGet('bots'), safeGet('inbox'),
+    safeGet('coins'), safeGet('stats'),
+  ]);
+  const userList  = Object.values(users  || {});
+  const botList   = Object.values(bots   || {});
+  const coinList  = Object.values(coins  || {});
+  const inboxList = Object.values(inbox  || {});
+  const totalCoins = coinList.reduce((s, u) => s + (u.balance || 0), 0);
+  const activeBots = botList.filter(b => b.status === 'active').length;
+  return {
+    totalUsers:    userList.length,
+    activeBots,
+    totalBots:     botList.length,
+    totalInbox:    inboxList.length,
+    totalCoins,
+    stats:         stats || {},
+  };
+};
+
+
+// Assign admin functions to exports
+module.exports.registerBot    = registerBot;
+module.exports.updateBotStatus = updateBotStatus;
+module.exports.getBots         = getBots;
+module.exports.getUsers        = getUsers;
+module.exports.addCoinsAdmin   = addCoinsAdmin;
+module.exports.getTotalStats   = getTotalStats;

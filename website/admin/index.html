@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>SASA MD — Admin Panel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --red:#e8001d;--red2:#c0001a;--red-soft:rgba(232,0,29,0.1);
+  --black:#050505;--black2:#0e0e0e;--black3:#161616;--black4:#1e1e1e;
+  --white:#fff;--white2:#ccc;--white3:#888;--white4:#444;
+  --green:#00c851;--gold:#f5a623;--blue:#3b82f6;
+  --border:rgba(232,0,29,0.15);--border2:rgba(255,255,255,0.06);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--black);color:var(--white);font-family:'Rajdhani',sans-serif;min-height:100vh;}
+a{color:inherit;text-decoration:none;}
+button{cursor:pointer;font-family:'Rajdhani',sans-serif;}
+input,select,textarea{font-family:'Rajdhani',sans-serif;}
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:var(--black2);}
+::-webkit-scrollbar-thumb{background:var(--red);border-radius:3px;}
+
+/* ── LOGIN ── */
+#loginScreen{
+  position:fixed;inset:0;z-index:999;
+  background:var(--black);
+  display:flex;align-items:center;justify-content:center;
+  padding:1.5rem;
+}
+.login-card{
+  width:100%;max-width:380px;
+  background:rgba(14,3,3,0.95);
+  border:1px solid var(--border);border-radius:16px;
+  padding:2.5rem 2rem;
+}
+.login-logo{
+  display:flex;align-items:center;gap:10px;justify-content:center;
+  font-family:'Orbitron',sans-serif;font-size:1.1rem;font-weight:900;
+  margin-bottom:0.5rem;
+}
+.login-logo .r{color:var(--red);}
+.login-sub{text-align:center;font-family:'Share Tech Mono',monospace;font-size:0.7rem;letter-spacing:2px;color:var(--white4);margin-bottom:2rem;}
+.fl{display:block;font-size:0.72rem;letter-spacing:2px;text-transform:uppercase;color:var(--red);font-family:'Share Tech Mono',monospace;margin-bottom:0.45rem;}
+.fi{width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:0.8rem 1rem;color:var(--white);font-size:0.95rem;outline:none;transition:border-color 0.2s;margin-bottom:1rem;}
+.fi:focus{border-color:var(--red);}
+.fi::placeholder{color:var(--white4);}
+.btn-login{width:100%;padding:0.9rem;border-radius:10px;background:var(--red);border:none;color:var(--white);font-family:'Orbitron',sans-serif;font-size:0.8rem;font-weight:700;letter-spacing:2px;cursor:pointer;transition:all 0.25s;box-shadow:0 4px 20px rgba(232,0,29,0.3);}
+.btn-login:hover{box-shadow:0 8px 30px rgba(232,0,29,0.5);transform:translateY(-1px);}
+.login-err{color:var(--red);font-size:0.82rem;text-align:center;margin-top:0.7rem;display:none;}
+
+/* ── LAYOUT ── */
+#adminApp{display:none;}
+.admin-layout{display:flex;min-height:100vh;}
+
+/* ── SIDEBAR ── */
+.sidebar{
+  width:220px;flex-shrink:0;
+  background:var(--black2);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  position:fixed;top:0;left:0;bottom:0;
+  z-index:100;transition:transform 0.3s;
+}
+.sb-logo{
+  padding:1.2rem 1rem;border-bottom:1px solid var(--border2);
+  display:flex;align-items:center;gap:8px;
+  font-family:'Orbitron',sans-serif;font-size:0.95rem;font-weight:900;
+}
+.sb-logo .r{color:var(--red);}
+.sb-badge{
+  background:rgba(232,0,29,0.1);border:1px solid rgba(232,0,29,0.25);
+  border-radius:4px;padding:0.15rem 0.5rem;
+  font-family:'Share Tech Mono',monospace;font-size:0.62rem;color:var(--red);
+  margin-left:auto;
+}
+.sb-nav{flex:1;padding:0.8rem 0;overflow-y:auto;}
+.sb-item{
+  display:flex;align-items:center;gap:10px;
+  padding:0.7rem 1rem;font-size:0.88rem;font-weight:600;
+  color:var(--white3);cursor:pointer;transition:all 0.2s;
+  border-left:2px solid transparent;
+}
+.sb-item:hover{color:var(--white);background:rgba(255,255,255,0.03);}
+.sb-item.active{color:var(--red);background:rgba(232,0,29,0.07);border-left-color:var(--red);}
+.sb-icon{font-size:1rem;width:20px;text-align:center;}
+.sb-section{
+  font-family:'Share Tech Mono',monospace;font-size:0.62rem;
+  letter-spacing:2px;text-transform:uppercase;color:var(--white4);
+  padding:1rem 1rem 0.4rem;
+}
+.sb-footer{
+  padding:1rem;border-top:1px solid var(--border2);
+  font-size:0.78rem;color:var(--white4);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.sb-logout{
+  background:rgba(232,0,29,0.1);border:1px solid rgba(232,0,29,0.2);
+  color:var(--red);padding:0.3rem 0.7rem;border-radius:6px;
+  font-size:0.75rem;font-weight:700;cursor:pointer;transition:all 0.2s;
+}
+.sb-logout:hover{background:rgba(232,0,29,0.2);}
+
+/* ── MAIN ── */
+.main-content{margin-left:220px;flex:1;padding:1.5rem;min-height:100vh;background:var(--black);}
+
+/* ── TOP BAR ── */
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:1.5rem;flex-wrap:wrap;gap:0.8rem;
+}
+.page-title{font-family:'Orbitron',sans-serif;font-size:1.3rem;font-weight:900;}
+.page-title span{color:var(--red);}
+.topbar-right{display:flex;align-items:center;gap:0.7rem;}
+.status-pill{
+  display:flex;align-items:center;gap:6px;
+  background:rgba(0,200,80,0.1);border:1px solid rgba(0,200,80,0.25);
+  border-radius:20px;padding:0.35rem 0.9rem;
+  font-family:'Share Tech Mono',monospace;font-size:0.75rem;color:var(--green);
+}
+.sp-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:blink 1.5s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.3;}}
+.status-pill.offline{background:rgba(232,0,29,0.1);border-color:rgba(232,0,29,0.25);color:var(--red);}
+.status-pill.offline .sp-dot{background:var(--red);box-shadow:0 0 6px var(--red);}
+
+/* ── PANELS ── */
+.panel{display:none;animation:fadeIn 0.3s ease;}
+.panel.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+
+/* ── STAT CARDS ── */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:1.5rem;}
+.stat-card{
+  background:var(--black3);border:1px solid var(--border);
+  border-radius:12px;padding:1.2rem;
+  position:relative;overflow:hidden;transition:all 0.25s;
+}
+.stat-card:hover{border-color:rgba(232,0,29,0.35);transform:translateY(-2px);}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--red),transparent);}
+.sc-label{font-family:'Share Tech Mono',monospace;font-size:0.68rem;letter-spacing:2px;text-transform:uppercase;color:var(--white4);margin-bottom:0.6rem;}
+.sc-num{font-family:'Orbitron',sans-serif;font-size:2rem;font-weight:900;color:var(--white);}
+.sc-num.r{color:var(--red);}
+.sc-num.g{color:var(--green);}
+.sc-num.gold{color:var(--gold);}
+.sc-icon{position:absolute;top:1rem;right:1rem;font-size:1.5rem;opacity:0.2;}
+.sc-sub{font-size:0.78rem;color:var(--white4);margin-top:0.3rem;}
+
+/* ── SECTION BLOCK ── */
+.block{background:var(--black3);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:1.2rem;}
+.block-hd{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0.9rem 1.2rem;border-bottom:1px solid var(--border2);
+  flex-wrap:wrap;gap:0.5rem;
+}
+.block-hd h3{font-family:'Orbitron',sans-serif;font-size:0.8rem;font-weight:700;letter-spacing:1px;}
+.block-bd{padding:1.2rem;}
+
+/* ── TABLE ── */
+.tbl{width:100%;border-collapse:collapse;font-size:0.85rem;}
+.tbl th{
+  text-align:left;padding:0.65rem 0.8rem;
+  font-family:'Share Tech Mono',monospace;font-size:0.65rem;
+  letter-spacing:2px;text-transform:uppercase;color:var(--white4);
+  border-bottom:1px solid var(--border2);background:rgba(255,255,255,0.02);
+}
+.tbl td{padding:0.7rem 0.8rem;border-bottom:1px solid rgba(255,255,255,0.03);vertical-align:middle;}
+.tbl tr:last-child td{border:none;}
+.tbl tr:hover td{background:rgba(255,255,255,0.015);}
+.tbl-num{font-family:'Share Tech Mono',monospace;font-size:0.8rem;color:var(--gold);}
+.tbl-name{font-weight:600;}
+.tbl-status{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:0.2rem 0.6rem;border-radius:4px;
+  font-size:0.72rem;font-weight:700;letter-spacing:0.5px;
+}
+.ts-active{background:rgba(0,200,80,0.1);color:var(--green);border:1px solid rgba(0,200,80,0.25);}
+.ts-inactive{background:rgba(255,255,255,0.05);color:var(--white4);border:1px solid var(--border2);}
+.ts-banned{background:rgba(232,0,29,0.1);color:var(--red);border:1px solid rgba(232,0,29,0.25);}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:0.55rem 1.1rem;border-radius:8px;font-weight:700;font-size:0.82rem;cursor:pointer;transition:all 0.2s;border:none;}
+.btn-red{background:var(--red);color:var(--white);}
+.btn-red:hover{background:var(--red2);}
+.btn-grey{background:rgba(255,255,255,0.06);color:var(--white2);border:1px solid var(--border2);}
+.btn-grey:hover{background:rgba(255,255,255,0.1);}
+.btn-green{background:rgba(0,200,80,0.1);color:var(--green);border:1px solid rgba(0,200,80,0.2);}
+.btn-green:hover{background:rgba(0,200,80,0.2);}
+.btn-sm{padding:0.3rem 0.7rem;font-size:0.75rem;}
+
+/* ── FORM ── */
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;margin-bottom:0.8rem;}
+.fg{display:flex;flex-direction:column;gap:0.35rem;}
+.fl2{font-size:0.72rem;letter-spacing:1px;text-transform:uppercase;color:var(--white4);font-family:'Share Tech Mono',monospace;}
+.fi2{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:0.65rem 0.8rem;color:var(--white);font-size:0.9rem;outline:none;transition:border-color 0.2s;}
+.fi2:focus{border-color:var(--red);}
+.fi2::placeholder{color:var(--white4);}
+select.fi2 option{background:var(--black3);}
+
+/* ── DB TREE ── */
+.db-path-bar{display:flex;align-items:center;gap:0.5rem;margin-bottom:0.8rem;flex-wrap:wrap;}
+.db-path-input{flex:1;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:0.6rem 0.8rem;color:var(--white);font-family:'Share Tech Mono',monospace;font-size:0.82rem;outline:none;}
+.db-path-input:focus{border-color:var(--red);}
+.db-json{
+  background:var(--black2);border:1px solid var(--border2);border-radius:8px;
+  padding:1rem;font-family:'Share Tech Mono',monospace;font-size:0.78rem;
+  color:var(--white2);line-height:1.7;overflow-x:auto;max-height:400px;overflow-y:auto;
+  white-space:pre-wrap;word-break:break-all;
+}
+.db-key{color:var(--red);}
+.db-str{color:var(--green);}
+.db-num{color:var(--gold);}
+.db-bool{color:#60a5fa;}
+.db-null{color:var(--white4);}
+
+/* ── BROADCAST ── */
+.bc-textarea{
+  width:100%;background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.1);border-radius:8px;
+  padding:0.8rem;color:var(--white);font-family:'Rajdhani',sans-serif;font-size:0.95rem;
+  outline:none;resize:vertical;min-height:100px;transition:border-color 0.2s;
+}
+.bc-textarea:focus{border-color:var(--red);}
+
+/* ── ACTIVITY LOG ── */
+.log-list{display:flex;flex-direction:column;gap:0.4rem;max-height:280px;overflow-y:auto;}
+.log-item{
+  display:flex;align-items:flex-start;gap:8px;
+  padding:0.5rem 0.7rem;background:rgba(255,255,255,0.02);
+  border-radius:6px;font-size:0.8rem;border-left:2px solid transparent;
+}
+.log-item.info{border-color:var(--blue);}
+.log-item.success{border-color:var(--green);}
+.log-item.warn{border-color:var(--gold);}
+.log-item.error{border-color:var(--red);}
+.log-time{font-family:'Share Tech Mono',monospace;font-size:0.68rem;color:var(--white4);flex-shrink:0;}
+.log-msg{color:var(--white2);}
+
+/* ── LIVE COUNTER ── */
+.live-counter{
+  background:linear-gradient(135deg,rgba(232,0,29,0.08),rgba(14,3,3,0));
+  border:1px solid var(--border);border-radius:16px;padding:2rem;
+  text-align:center;margin-bottom:1.2rem;
+}
+.lc-num{font-family:'Orbitron',sans-serif;font-size:4rem;font-weight:900;color:var(--white);text-shadow:0 0 30px rgba(232,0,29,0.3);}
+.lc-label{font-family:'Share Tech Mono',monospace;font-size:0.75rem;letter-spacing:3px;color:var(--red);margin-bottom:0.5rem;}
+.lc-sub{font-size:0.82rem;color:var(--white4);}
+
+/* ── COIN MANAGER ── */
+.coin-quick{display:grid;grid-template-columns:1fr auto auto;gap:0.5rem;align-items:end;}
+
+/* ── TOAST ── */
+.toast{
+  position:fixed;bottom:1.5rem;right:1.5rem;
+  padding:0.8rem 1.3rem;border-radius:10px;font-weight:600;font-size:0.88rem;
+  z-index:9999;transform:translateY(60px);opacity:0;transition:all 0.3s;
+  backdrop-filter:blur(10px);
+}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.success{background:rgba(0,200,80,0.15);border:1px solid rgba(0,200,80,0.3);color:var(--green);}
+.toast.error{background:rgba(232,0,29,0.15);border:1px solid rgba(232,0,29,0.3);color:var(--red);}
+.toast.info{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);color:var(--white2);}
+
+/* ── RESPONSIVE ── */
+@media(max-width:768px){
+  .sidebar{transform:translateX(-100%);}
+  .sidebar.open{transform:translateX(0);}
+  .main-content{margin-left:0;}
+  .form-row{grid-template-columns:1fr;}
+  .coin-quick{grid-template-columns:1fr 1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">
+      <svg width="32" height="32" viewBox="0 0 42 42" fill="none"><rect width="42" height="42" rx="10" fill="#1a0308"/><path d="M9 26 L13 16 L17 22 L21 13 L25 22 L29 16 L33 26 Z" fill="#e8001d" opacity="0.9"/><rect x="9" y="26" width="24" height="4" rx="2" fill="#e8001d"/><circle cx="21" cy="12" r="2.5" fill="#fff" opacity="0.9"/></svg>
+      <span><span class="r">SASA</span> MD</span>
+    </div>
+    <div class="login-sub">ADMIN PANEL — RESTRICTED ACCESS</div>
+    <label class="fl">Username / Number</label>
+    <input class="fi" id="loginUser" type="text" placeholder="94727114552"/>
+    <label class="fl">Password</label>
+    <input class="fi" id="loginPass" type="password" placeholder="••••••••"/>
+    <button class="btn-login" onclick="doAdminLogin()">🔐 LOGIN</button>
+    <div class="login-err" id="loginErr"></div>
+  </div>
+</div>
+
+<!-- ADMIN APP -->
+<div id="adminApp">
+  <div class="admin-layout">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar" id="sidebar">
+      <div class="sb-logo">
+        <svg width="28" height="28" viewBox="0 0 42 42" fill="none"><rect width="42" height="42" rx="8" fill="#1a0308"/><path d="M9 26 L13 16 L17 22 L21 13 L25 22 L29 16 L33 26 Z" fill="#e8001d"/><rect x="9" y="26" width="24" height="4" rx="2" fill="#e8001d"/></svg>
+        <span><span class="r">SASA</span> MD</span>
+        <span class="sb-badge">ADMIN</span>
+      </div>
+      <nav class="sb-nav">
+        <div class="sb-section">Dashboard</div>
+        <div class="sb-item active" onclick="showPanel('dashboard',this)"><span class="sb-icon">📊</span> Dashboard</div>
+        <div class="sb-item" onclick="showPanel('bots',this)"><span class="sb-icon">🤖</span> Active Bots</div>
+        <div class="sb-section">Management</div>
+        <div class="sb-item" onclick="showPanel('users',this)"><span class="sb-icon">👥</span> Users</div>
+        <div class="sb-item" onclick="showPanel('coins',this)"><span class="sb-icon">💰</span> Coins</div>
+        <div class="sb-item" onclick="showPanel('inbox',this)"><span class="sb-icon">📩</span> Inbox</div>
+        <div class="sb-section">System</div>
+        <div class="sb-item" onclick="showPanel('broadcast',this)"><span class="sb-icon">📢</span> Broadcast</div>
+        <div class="sb-item" onclick="showPanel('database',this)"><span class="sb-icon">🗄</span> Live Database</div>
+        <div class="sb-item" onclick="showPanel('logs',this)"><span class="sb-icon">📋</span> Activity Log</div>
+      </nav>
+      <div class="sb-footer">
+        <span id="sbUser" style="font-family:'Share Tech Mono',monospace;font-size:0.72rem;"></span>
+        <button class="sb-logout" onclick="adminLogout()">Logout</button>
+      </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main-content">
+
+      <!-- DASHBOARD -->
+      <div class="panel active" id="panel-dashboard">
+        <div class="topbar">
+          <div class="page-title">Admin <span>Dashboard</span></div>
+          <div class="topbar-right">
+            <div class="status-pill offline" id="botStatusPill">
+              <div class="sp-dot"></div><span id="botStatusTxt">Checking...</span>
+            </div>
+            <button class="btn btn-grey btn-sm" onclick="refreshAll()">🔄 Refresh</button>
+          </div>
+        </div>
+        <div class="stat-grid">
+          <div class="stat-card"><div class="sc-icon">🤖</div><div class="sc-label">Active Bots</div><div class="sc-num r" id="stat-bots">—</div><div class="sc-sub">SASA MD instances</div></div>
+          <div class="stat-card"><div class="sc-icon">👥</div><div class="sc-label">Total Users</div><div class="sc-num" id="stat-users">—</div><div class="sc-sub">Registered numbers</div></div>
+          <div class="stat-card"><div class="sc-icon">💰</div><div class="sc-label">Total Coins</div><div class="sc-num gold" id="stat-coins">—</div><div class="sc-sub">In circulation</div></div>
+          <div class="stat-card"><div class="sc-icon">📩</div><div class="sc-label">Inbox Messages</div><div class="sc-num" id="stat-inbox">—</div><div class="sc-sub">Saved messages</div></div>
+        </div>
+        <div class="live-counter">
+          <div class="lc-label">SASA MD ACTIVE BOTS</div>
+          <div class="lc-num" id="liveActiveBots">0</div>
+          <div class="lc-sub">Live count from database • auto-updates every 30s</div>
+        </div>
+        <div class="block">
+          <div class="block-hd"><h3>📊 Quick Stats</h3><button class="btn btn-grey btn-sm" onclick="loadStats()">Reload</button></div>
+          <div class="block-bd">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+              <div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:1rem;">
+                <div style="font-size:0.72rem;color:var(--white4);font-family:'Share Tech Mono',monospace;letter-spacing:1px;margin-bottom:0.5rem;">BOT STATUS</div>
+                <div id="qsStatus" style="font-weight:700;color:var(--green);">—</div>
+              </div>
+              <div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:1rem;">
+                <div style="font-size:0.72rem;color:var(--white4);font-family:'Share Tech Mono',monospace;letter-spacing:1px;margin-bottom:0.5rem;">BOT VERSION</div>
+                <div id="qsVersion" style="font-family:'Share Tech Mono',monospace;color:var(--red);">—</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BOTS -->
+      <div class="panel" id="panel-bots">
+        <div class="topbar">
+          <div class="page-title">Active <span>Bots</span></div>
+          <button class="btn btn-red btn-sm" onclick="openAddBot()">+ Add Bot</button>
+        </div>
+        <div class="block" id="addBotBlock" style="display:none;">
+          <div class="block-hd"><h3>Register New Bot</h3><button class="btn btn-grey btn-sm" onclick="document.getElementById('addBotBlock').style.display='none'">✕ Cancel</button></div>
+          <div class="block-bd">
+            <div class="form-row">
+              <div class="fg"><label class="fl2">WhatsApp Number</label><input class="fi2" id="botNum" placeholder="94771234567"/></div>
+              <div class="fg"><label class="fl2">Owner Name</label><input class="fi2" id="botName" placeholder="PAHAN"/></div>
+            </div>
+            <div class="form-row">
+              <div class="fg">
+                <label class="fl2">Plan</label>
+                <select class="fi2" id="botPlan"><option value="free">Free</option><option value="pro">Pro</option><option value="premium">Premium</option></select>
+              </div>
+              <div class="fg"><label class="fl2">Status</label><select class="fi2" id="botStatus2"><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
+            </div>
+            <button class="btn btn-red" onclick="registerBot()">✅ Register Bot</button>
+          </div>
+        </div>
+        <div class="block">
+          <div class="block-hd"><h3>🤖 SASA MD Active Bots</h3><span id="botCount" style="font-family:'Share Tech Mono',monospace;font-size:0.75rem;color:var(--white4);">Loading...</span></div>
+          <div style="overflow-x:auto;">
+            <table class="tbl">
+              <thead><tr><th>Number</th><th>Owner</th><th>Plan</th><th>Status</th><th>Last Active</th><th>Actions</th></tr></thead>
+              <tbody id="botsTable"><tr><td colspan="6" style="text-align:center;color:var(--white4);padding:2rem;">Loading bots...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- USERS -->
+      <div class="panel" id="panel-users">
+        <div class="topbar">
+          <div class="page-title">User <span>Management</span></div>
+          <input id="userSearch" placeholder="🔍 Search by number or name..." style="background:rgba(255,255,255,0.04);border:1px solid var(--border2);border-radius:8px;padding:0.5rem 0.9rem;color:var(--white);font-size:0.85rem;outline:none;width:220px;" oninput="filterUsers()"/>
+        </div>
+        <div class="block">
+          <div class="block-hd"><h3>👥 All Users</h3><span id="userCount" style="font-family:'Share Tech Mono',monospace;font-size:0.75rem;color:var(--white4);">Loading...</span></div>
+          <div style="overflow-x:auto;">
+            <table class="tbl">
+              <thead><tr><th>Number</th><th>Name</th><th>Coins</th><th>Spent</th><th>First Seen</th><th>Actions</th></tr></thead>
+              <tbody id="usersTable"><tr><td colspan="6" style="text-align:center;color:var(--white4);padding:2rem;">Loading users...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- COINS -->
+      <div class="panel" id="panel-coins">
+        <div class="topbar"><div class="page-title">Coin <span>Management</span></div></div>
+        <div class="block">
+          <div class="block-hd"><h3>💰 Add / Remove Coins</h3></div>
+          <div class="block-bd">
+            <div class="form-row">
+              <div class="fg"><label class="fl2">WhatsApp Number</label><input class="fi2" id="coinNum" placeholder="94771234567"/></div>
+              <div class="fg"><label class="fl2">Amount</label><input class="fi2" id="coinAmt" type="number" min="1" placeholder="100"/></div>
+            </div>
+            <div class="form-row">
+              <div class="fg">
+                <label class="fl2">Action</label>
+                <select class="fi2" id="coinAction"><option value="add">➕ Add Coins</option><option value="remove">➖ Remove Coins</option></select>
+              </div>
+            </div>
+            <div style="display:flex;gap:0.7rem;">
+              <button class="btn btn-green" onclick="manageCoins()">✅ Apply</button>
+              <button class="btn btn-grey" onclick="checkBalance()">💰 Check Balance</button>
+            </div>
+            <div id="coinResult" style="margin-top:0.8rem;font-family:'Share Tech Mono',monospace;font-size:0.82rem;display:none;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- INBOX -->
+      <div class="panel" id="panel-inbox">
+        <div class="topbar"><div class="page-title">Message <span>Inbox</span></div><button class="btn btn-grey btn-sm" onclick="loadInbox()">🔄 Refresh</button></div>
+        <div class="block">
+          <div class="block-hd"><h3>📩 Unknown Number Messages</h3><span id="inboxCount" style="font-family:'Share Tech Mono',monospace;font-size:0.75rem;color:var(--white4);">Loading...</span></div>
+          <div style="overflow-x:auto;">
+            <table class="tbl">
+              <thead><tr><th>Name</th><th>Number</th><th>Message</th><th>Time</th><th>Actions</th></tr></thead>
+              <tbody id="inboxTable"><tr><td colspan="5" style="text-align:center;color:var(--white4);padding:2rem;">Loading...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- BROADCAST -->
+      <div class="panel" id="panel-broadcast">
+        <div class="topbar"><div class="page-title">Send <span>Broadcast</span></div></div>
+        <div class="block">
+          <div class="block-hd"><h3>📢 Broadcast Message</h3></div>
+          <div class="block-bd">
+            <div class="fg" style="margin-bottom:0.8rem;">
+              <label class="fl2">Message (WhatsApp format supported)</label>
+              <textarea class="bc-textarea" id="bcMsg" placeholder="*Hello!* This is a broadcast from SASA MD Bot 🤖"></textarea>
+            </div>
+            <button class="btn btn-red" onclick="sendBroadcast()">📢 Send Broadcast</button>
+            <p style="font-size:0.78rem;color:var(--white4);margin-top:0.7rem;">Message will be sent to all known numbers via the bot.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- DATABASE -->
+      <div class="panel" id="panel-database">
+        <div class="topbar"><div class="page-title">Live <span>Database</span></div></div>
+        <div class="block">
+          <div class="block-hd"><h3>🗄 Firebase Realtime Database</h3></div>
+          <div class="block-bd">
+            <div class="db-path-bar">
+              <input class="db-path-input" id="dbPath" placeholder="/" value="/"/>
+              <button class="btn btn-red btn-sm" onclick="loadDB()">Load</button>
+              <button class="btn btn-grey btn-sm" onclick="document.getElementById('dbPath').value='/';loadDB()">Root</button>
+            </div>
+            <div style="display:flex;gap:0.5rem;margin-bottom:0.8rem;flex-wrap:wrap;">
+              <button class="btn btn-grey btn-sm" onclick="quickDB('/users')">users</button>
+              <button class="btn btn-grey btn-sm" onclick="quickDB('/bots')">bots</button>
+              <button class="btn btn-grey btn-sm" onclick="quickDB('/coins')">coins</button>
+              <button class="btn btn-grey btn-sm" onclick="quickDB('/inbox')">inbox</button>
+              <button class="btn btn-grey btn-sm" onclick="quickDB('/settings')">settings</button>
+              <button class="btn btn-grey btn-sm" onclick="quickDB('/autoreplies')">autoreplies</button>
+              <button class="btn btn-grey btn-sm" onclick="quickDB('/stats')">stats</button>
+            </div>
+            <div class="db-json" id="dbJson">Click Load or select a path above to view data.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LOGS -->
+      <div class="panel" id="panel-logs">
+        <div class="topbar">
+          <div class="page-title">Activity <span>Log</span></div>
+          <button class="btn btn-grey btn-sm" onclick="clearLogs()">🗑 Clear</button>
+        </div>
+        <div class="block">
+          <div class="block-hd"><h3>📋 Recent Activity</h3></div>
+          <div class="block-bd">
+            <div class="log-list" id="logList">
+              <div class="log-item info"><span class="log-time">--:--:--</span><span class="log-msg">Admin panel loaded</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end main-content -->
+  </div><!-- end admin-layout -->
+</div><!-- end adminApp -->
+
+<div class="toast" id="adminToast"></div>
+
+<script>
+// ── State ────────────────────────────────────────────────────
+let adminToken = null;
+let allUsers   = [];
+let allBots    = [];
+let logs       = [];
+
+// ── Helpers ──────────────────────────────────────────────────
+function toast(msg, type='info') {
+  const t = document.getElementById('adminToast');
+  t.className = `toast ${type}`; t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function addLog(msg, type='info') {
+  const time = new Date().toLocaleTimeString();
+  logs.unshift({ msg, type, time });
+  if (logs.length > 100) logs.pop();
+  renderLogs();
+}
+
+function renderLogs() {
+  const el = document.getElementById('logList');
+  el.innerHTML = logs.map(l =>
+    `<div class="log-item ${l.type}"><span class="log-time">${l.time}</span><span class="log-msg">${l.msg}</span></div>`
+  ).join('') || '<div style="color:var(--white4);padding:1rem;text-align:center;">No logs yet.</div>';
+}
+
+function clearLogs() { logs = []; renderLogs(); }
+
+async function api(path, method='GET', body=null) {
+  const opts = {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${adminToken}`,
+    },
+  };
+  if (body) opts.body = JSON.stringify(body);
+  const res  = await fetch(path, opts);
+  return res.json();
+}
+
+// ── Login ─────────────────────────────────────────────────────
+async function doAdminLogin() {
+  const username = document.getElementById('loginUser').value.trim();
+  const password = document.getElementById('loginPass').value.trim();
+  const errEl    = document.getElementById('loginErr');
+  errEl.style.display = 'none';
+  if (!username || !password) { errEl.textContent='Enter credentials'; errEl.style.display='block'; return; }
+  try {
+    const data = await fetch('/api/admin/login', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ username, password }),
+    }).then(r => r.json());
+    if (data.ok) {
+      adminToken = data.token;
+      sessionStorage.setItem('sasa_admin_token', adminToken);
+      showAdminApp(username);
+    } else {
+      errEl.textContent = data.msg || '❌ Invalid credentials';
+      errEl.style.display = 'block';
+    }
+  } catch {
+    errEl.textContent = '❌ Server error. Make sure bot is running.';
+    errEl.style.display = 'block';
+  }
+}
+
+function showAdminApp(username) {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('adminApp').style.display = 'block';
+  document.getElementById('sbUser').textContent = username || 'Admin';
+  addLog('Admin logged in', 'success');
+  loadStats();
+  loadBots();
+  loadUsers();
+  startStatusPoll();
+}
+
+function adminLogout() {
+  sessionStorage.removeItem('sasa_admin_token');
+  adminToken = null;
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('adminApp').style.display = 'none';
+}
+
+// ── Panels ────────────────────────────────────────────────────
+function showPanel(id, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(b => b.classList.remove('active'));
+  document.getElementById(`panel-${id}`).classList.add('active');
+  btn.classList.add('active');
+  if (id==='database') loadDB();
+  if (id==='inbox') loadInbox();
+  if (id==='logs') renderLogs();
+}
+
+// ── Stats ─────────────────────────────────────────────────────
+async function loadStats() {
+  try {
+    const d = await api('/api/admin/stats');
+    if (d.ok) {
+      const s = d.data;
+      document.getElementById('stat-bots').textContent  = s.activeBots  ?? '—';
+      document.getElementById('stat-users').textContent = s.totalUsers  ?? '—';
+      document.getElementById('stat-coins').textContent = s.totalCoins  ?? '—';
+      document.getElementById('stat-inbox').textContent = s.totalInbox  ?? '—';
+      document.getElementById('liveActiveBots').textContent = s.activeBots ?? 0;
+      document.getElementById('qsVersion').textContent  = s.version || '—';
+      document.getElementById('qsStatus').textContent   = s.botStatus || '—';
+      updateBotStatusPill(s.botStatus);
+      addLog(`Stats refreshed — ${s.activeBots} active bots`, 'info');
+    }
+  } catch(e) { addLog('Stats load failed: '+e.message, 'error'); }
+}
+
+// ── Bot status poll ───────────────────────────────────────────
+function startStatusPoll() {
+  const poll = async () => {
+    try {
+      const d = await fetch('/status').then(r=>r.json());
+      updateBotStatusPill(d.status);
+    } catch {}
+  };
+  poll();
+  setInterval(poll, 15000);
+  setInterval(loadStats, 30000);
+}
+
+function updateBotStatusPill(status) {
+  const pill = document.getElementById('botStatusPill');
+  const txt  = document.getElementById('botStatusTxt');
+  if (status==='connected') {
+    pill.className='status-pill'; txt.textContent='Bot Online';
+  } else if (status==='qr') {
+    pill.className='status-pill'; txt.textContent='QR Pending';
+    pill.style.background='rgba(245,166,35,0.1)';
+    pill.style.borderColor='rgba(245,166,35,0.3)';
+    pill.style.color='var(--gold)';
+  } else {
+    pill.className='status-pill offline'; txt.textContent='Bot Offline';
+  }
+}
+
+// ── Bots ──────────────────────────────────────────────────────
+function openAddBot() {
+  const b = document.getElementById('addBotBlock');
+  b.style.display = b.style.display==='none' ? 'block' : 'none';
+}
+
+async function loadBots() {
+  try {
+    const d = await api('/api/admin/bots');
+    if (d.ok) {
+      allBots = d.data || [];
+      document.getElementById('botCount').textContent = `${allBots.length} bot(s)`;
+      renderBots();
+      addLog(`Loaded ${allBots.length} bots`, 'info');
+    }
+  } catch(e) { addLog('Bots load failed: '+e.message,'error'); }
+}
+
+function renderBots() {
+  const tb = document.getElementById('botsTable');
+  if (!allBots.length) { tb.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--white4);padding:2rem;">No bots registered yet.</td></tr>'; return; }
+  tb.innerHTML = allBots.map(b => {
+    const sc = b.status==='active'?'ts-active':b.status==='banned'?'ts-banned':'ts-inactive';
+    const la = b.updatedAt ? new Date(b.updatedAt).toLocaleDateString() : '—';
+    return `<tr>
+      <td class="tbl-num">+${b.number||b.id}</td>
+      <td class="tbl-name">${b.name||'—'}</td>
+      <td><span style="color:var(--gold);font-size:0.8rem;">${b.plan||'free'}</span></td>
+      <td><span class="tbl-status ${sc}">${b.status||'unknown'}</span></td>
+      <td style="color:var(--white4);font-size:0.8rem;">${la}</td>
+      <td>
+        <button class="btn btn-green btn-sm" onclick="setBotStatus('${b.id||b.number}','active')">✓ Active</button>
+        <button class="btn btn-grey btn-sm" onclick="setBotStatus('${b.id||b.number}','inactive')">✕ Stop</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function registerBot() {
+  const num  = document.getElementById('botNum').value.trim();
+  const name = document.getElementById('botName').value.trim();
+  const plan = document.getElementById('botPlan').value;
+  const stat = document.getElementById('botStatus2').value;
+  if (!num) return toast('Enter a number!','error');
+  const d = await api('/api/admin/bots','POST',{ number:num, name, plan, status:stat });
+  if (d.ok) { toast(d.msg,'success'); addLog(`Bot registered: +${num}`,'success'); loadBots(); }
+  else toast(d.msg,'error');
+}
+
+async function setBotStatus(id, status) {
+  const d = await api(`/api/admin/bots/${id}`,'PATCH',{ status });
+  if (d.ok) { toast(`Status updated → ${status}`,'success'); loadBots(); }
+}
+
+// ── Users ─────────────────────────────────────────────────────
+async function loadUsers() {
+  try {
+    const d = await api('/api/admin/users');
+    if (d.ok) {
+      allUsers = d.data || [];
+      document.getElementById('userCount').textContent = `${allUsers.length} user(s)`;
+      renderUsers(allUsers);
+      addLog(`Loaded ${allUsers.length} users`,'info');
+    }
+  } catch(e) { addLog('Users load failed: '+e.message,'error'); }
+}
+
+function renderUsers(users) {
+  const tb = document.getElementById('usersTable');
+  if (!users.length) { tb.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--white4);padding:2rem;">No users yet.</td></tr>'; return; }
+  tb.innerHTML = users.map(u => {
+    const fs = u.firstSeen ? new Date(u.firstSeen).toLocaleDateString() : '—';
+    return `<tr>
+      <td class="tbl-num">+${u.id}</td>
+      <td class="tbl-name">${u.name||'Unknown'}</td>
+      <td style="color:var(--gold);font-family:'Share Tech Mono',monospace;">${u.balance||0} ◈</td>
+      <td style="color:var(--white4);font-family:'Share Tech Mono',monospace;">${u.spent||0}</td>
+      <td style="color:var(--white4);font-size:0.8rem;">${fs}</td>
+      <td>
+        <button class="btn btn-red btn-sm" onclick="quickBan('${u.id}')">🚫 Ban</button>
+        <button class="btn btn-grey btn-sm" onclick="quickGiveCoins('${u.id}')">+💰</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function filterUsers() {
+  const q = document.getElementById('userSearch').value.toLowerCase();
+  renderUsers(allUsers.filter(u => u.id?.includes(q) || u.name?.toLowerCase().includes(q)));
+}
+
+async function quickBan(num) {
+  if (!confirm(`Ban +${num}?`)) return;
+  const d = await api('/api/admin/ban','POST',{ number:num, action:'ban', reason:'Admin ban' });
+  if (d.ok) { toast('User banned!','success'); addLog(`Banned +${num}`,'warn'); }
+  else toast(d.msg,'error');
+}
+
+async function quickGiveCoins(num) {
+  const amt = prompt('How many coins to give?', '50');
+  if (!amt) return;
+  const d = await api('/api/admin/coins','POST',{ number:num, amount:parseInt(amt), action:'add' });
+  if (d.ok) { toast(`+${amt} coins given to +${num}`,'success'); addLog(`Gave ${amt} coins to +${num}`,'success'); loadUsers(); }
+  else toast(d.msg,'error');
+}
+
+// ── Coins ─────────────────────────────────────────────────────
+async function manageCoins() {
+  const num    = document.getElementById('coinNum').value.trim();
+  const amt    = document.getElementById('coinAmt').value;
+  const action = document.getElementById('coinAction').value;
+  if (!num||!amt) return toast('Fill all fields!','error');
+  const d = await api('/api/admin/coins','POST',{ number:num, amount:parseInt(amt), action });
+  if (d.ok) {
+    const r = document.getElementById('coinResult');
+    r.style.display='block';
+    r.style.color = action==='add' ? 'var(--green)' : 'var(--red)';
+    r.textContent = `${action==='add'?'+':'-'}${amt} coins → +${d.data?.number} | New balance: ${d.data?.balance} ◈`;
+    toast(`Coins ${action==='add'?'added':'removed'}!`,'success');
+    addLog(`${action} ${amt} coins for +${num}`,'success');
+    loadUsers();
+  } else toast(d.msg,'error');
+}
+
+async function checkBalance() {
+  const num = document.getElementById('coinNum').value.trim();
+  if (!num) return toast('Enter a number!','error');
+  const d = await api(`/api/admin/db/coins/${num.replace(/\D/g,'')}`);
+  if (d.ok && d.data) {
+    const r = document.getElementById('coinResult');
+    r.style.display='block'; r.style.color='var(--gold)';
+    r.textContent = `Balance: ${d.data.balance||0} ◈ | Spent: ${d.data.spent||0}`;
+  } else toast('User not found or no coins.','error');
+}
+
+// ── Inbox ─────────────────────────────────────────────────────
+async function loadInbox() {
+  try {
+    const d = await api('/api/admin/db/inbox');
+    const tb = document.getElementById('inboxTable');
+    if (!d.ok || !d.data) {
+      tb.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--white4);padding:2rem;">No messages.</td></tr>';
+      document.getElementById('inboxCount').textContent='0 messages';
+      return;
+    }
+    const rows = [];
+    for (const [num, msgs] of Object.entries(d.data)) {
+      for (const [ts, m] of Object.entries(msgs)) {
+        rows.push({ num, ...m, ts: parseInt(ts) });
+      }
+    }
+    rows.sort((a,b) => b.ts-a.ts);
+    document.getElementById('inboxCount').textContent=`${rows.length} message(s)`;
+    tb.innerHTML = rows.slice(0,50).map(r => `<tr>
+      <td class="tbl-name">${r.name||'Unknown'}</td>
+      <td class="tbl-num">+${r.num}</td>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.message||''}</td>
+      <td style="color:var(--white4);font-size:0.78rem;">${new Date(r.ts).toLocaleString()}</td>
+      <td><a href="https://wa.me/${r.num}" target="_blank" class="btn btn-green btn-sm">Reply</a></td>
+    </tr>`).join('');
+  } catch(e) { addLog('Inbox load failed: '+e.message,'error'); }
+}
+
+// ── Database ─────────────────────────────────────────────────
+function quickDB(p) { document.getElementById('dbPath').value=p; loadDB(); }
+
+async function loadDB() {
+  const p = document.getElementById('dbPath').value || '/';
+  const clean = p.replace(/^\//, '') || '';
+  const endpoint = `/api/admin/db/${clean}`;
+  const el = document.getElementById('dbJson');
+  el.textContent = 'Loading...';
+  try {
+    const d = await api(endpoint);
+    if (d.ok) {
+      el.innerHTML = syntaxHighlight(JSON.stringify(d.data, null, 2));
+      addLog(`DB loaded: ${p}`,'info');
+    } else {
+      el.textContent = 'Error: ' + d.msg;
+    }
+  } catch(e) { el.textContent = 'Error: '+e.message; addLog('DB load error: '+e.message,'error'); }
+}
+
+function syntaxHighlight(json) {
+  return json
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"([^"]+)":/g, '<span class="db-key">"$1"</span>:')
+    .replace(/: "([^"]*)"/g, ': <span class="db-str">"$1"</span>')
+    .replace(/: (\d+\.?\d*)/g, ': <span class="db-num">$1</span>')
+    .replace(/: (true|false)/g, ': <span class="db-bool">$1</span>')
+    .replace(/: (null)/g, ': <span class="db-null">null</span>');
+}
+
+// ── Broadcast ─────────────────────────────────────────────────
+async function sendBroadcast() {
+  const msg = document.getElementById('bcMsg').value.trim();
+  if (!msg) return toast('Enter a message!','error');
+  if (!confirm('Send broadcast to all known users?')) return;
+  const d = await api('/api/admin/broadcast','POST',{ message: msg });
+  if (d.ok) { toast(d.msg,'success'); addLog('Broadcast sent','success'); document.getElementById('bcMsg').value=''; }
+  else toast(d.msg,'error');
+}
+
+// ── Refresh all ───────────────────────────────────────────────
+function refreshAll() { loadStats(); loadBots(); loadUsers(); toast('Refreshed!','success'); }
+
+// ── Init ──────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  // Check for existing session
+  const saved = sessionStorage.getItem('sasa_admin_token');
+  if (saved) { adminToken = saved; showAdminApp('Admin'); }
+
+  document.getElementById('loginPass').addEventListener('keydown', e => {
+    if (e.key==='Enter') doAdminLogin();
+  });
+});
+</script>
+</body>
+</html>

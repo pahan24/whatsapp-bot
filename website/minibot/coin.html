@@ -4,7 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>SASA MD — Coin Wallet</title>
-<link rel="stylesheet" href="../css/global.css"/>
+<link rel="stylesheet" href="/css/global.css"/>
 <style>
 /* ── LOGIN ── */
 .coin-login{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem 1.2rem;}
@@ -148,7 +148,7 @@
         <input class="coin-input" id="coinPass" type="password" placeholder="••••••••"/>
         <div style="font-size:0.73rem;color:var(--white4);margin-top:0.3rem;">Send <span style="color:var(--gold)">.getpass</span> to bot to get password</div>
       </div>
-      <button class="btn-login" onclick="coinLogin()">LOGIN</button>
+      <button class="btn-login" onclick="doLogin()">LOGIN</button>
       <div id="coinLoginErr" style="display:none;color:var(--red);font-size:0.82rem;text-align:center;margin-top:0.8rem;"></div>
     </div>
   </div>
@@ -261,15 +261,15 @@
 </div>
 
 <footer id="footer" style="display:none;"></footer>
-<script src="../js/app.js"></script>
+<script src="/js/app.js"></script>
 <script>
 let coinNum = null;
 
-function coinLogin() {
+async function doLogin() {
   const num = document.getElementById('coinNum').value.trim();
   const pass = document.getElementById('coinPass').value.trim();
   const err = document.getElementById('coinLoginErr');
-  const result = sasaAuth.login(num, pass);
+  const result = await sasaAuth.login(num, pass);
   if (result.ok) {
     coinNum = sasaAuth.getNumber();
     showWallet();
@@ -447,7 +447,7 @@ function coinLogout() {
 document.addEventListener('DOMContentLoaded', () => {
   if (sasaAuth.isLoggedIn()) { showWallet(); }
   else { document.getElementById('loginView').style.display='block'; }
-  document.getElementById('coinPass')?.addEventListener('keydown', e => { if(e.key==='Enter') coinLogin(); });
+  document.getElementById('coinPass')?.addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
 });
 </script>
 </body>

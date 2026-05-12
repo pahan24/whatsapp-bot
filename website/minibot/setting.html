@@ -4,7 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>SASA MD — Settings</title>
-<link rel="stylesheet" href="../css/global.css"/>
+<link rel="stylesheet" href="/css/global.css"/>
 <style>
 .setting-page{padding:1.5rem 1.2rem 5rem;max-width:540px;margin:0 auto;}
 .setting-title{
@@ -332,7 +332,7 @@
 
 </div><!-- end page-wrap -->
 
-<script src="../js/app.js"></script>
+<script src="/js/app.js"></script>
 <script>
 let words = [];
 let customLinks = [];
@@ -345,11 +345,11 @@ function checkAccess() {
   else { lock.style.display='flex'; main.style.display='none'; }
 }
 
-function doLogin() {
+async function doLogin() {
   const num = document.getElementById('lockNum').value.trim();
   const pass = document.getElementById('lockPass').value.trim();
   const err = document.getElementById('loginErr');
-  const result = sasaAuth.login(num, pass);
+  const result = await sasaAuth.login(num, pass);
   if (result.ok) { checkAccess(); showToast('✅ Access granted!', 'success'); }
   else { err.style.display='block'; err.textContent = result.msg || 'Invalid credentials'; }
 }
