@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>SASA MD — Settings</title>
+<link rel="stylesheet" href="css/global.css"/>
+<style>
+  body{background:#050505;color:#fff;font-family:Arial,sans-serif;}
+  .page-wrap{max-width:600px;margin:0 auto;padding:2rem 1rem;}
+  .card{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:2rem;margin-bottom:1.5rem;}
+  .card h2{margin:0 0 1rem;font-size:1.3rem;color:#e8001d;}
+  .field{display:flex;flex-direction:column;gap:0.5rem;margin-bottom:1.5rem;}
+  .field label{font-size:0.9rem;color:#ccc;font-weight:500;}
+  .field input{padding:0.9rem 1rem;border-radius:10px;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.05);color:#fff;outline:none;font-size:0.95rem;}
+  .field input:focus{border-color:#e8001d;box-shadow:0 0 8px rgba(232,0,29,0.3);}
+  .btn{cursor:pointer;border:none;border-radius:10px;padding:0.95rem 1.5rem;background:#e8001d;color:#fff;font-weight:700;font-size:0.9rem;transition:all 0.2s;}
+  .btn:hover{background:#cc0019;transform:translateY(-2px);}
+  .btn:disabled{background:#555;cursor:not-allowed;}
+  .message{padding:1rem;border-radius:10px;margin-bottom:1rem;display:none;}
+  .message.success{background:rgba(0,200,80,0.1);border:1px solid rgba(0,200,80,0.3);color:#00c851;}
+  .message.error{background:rgba(232,0,29,0.1);border:1px solid rgba(232,0,29,0.3);color:#ff7b7b;}
+  .message.info{background:rgba(100,150,255,0.1);border:1px solid rgba(100,150,255,0.3);color:#6496ff;}
+  .hidden{display:none;}
+  .help-text{font-size:0.8rem;color:#999;margin-top:0.3rem;}
+  .divider{height:1px;background:rgba(255,255,255,0.08);margin:2rem 0;}
+  .info-box{background:rgba(0,150,255,0.05);border-left:3px solid #0096ff;padding:1rem;border-radius:8px;margin-bottom:1.5rem;}
+  .info-box p{margin:0;font-size:0.85rem;line-height:1.6;color:#999;}
+</style>
+</head>
+<body>
+<canvas id="particle-canvas"></canvas>
+<div class="bg-radial"></div>
+<nav id="navbar"></nav>
+
+<div class="page-wrap">
+  <!-- Login Section -->
+  <div id="loginSection">
+    <div class="card">
+      <h2>⚙️ User Settings</h2>
+      <div class="info-box">
+        <p>👉 <strong>Get your password from the bot's welcome message</strong> when it connects to WhatsApp.</p>
+        <p>🔐 Use that password to login here and manage your account.</p>
+      </div>
+
+      <div id="loginMsg" class="message"></div>
+
+      <div class="field">
+        <label>WhatsApp Number</label>
+        <input id="userNumber" type="tel" placeholder="94727114552" title="Your WhatsApp number (with country code)"/>
+        <div class="help-text">Enter your number with country code (e.g., 94 for Sri Lanka)</div>
+      </div>
+
+      <div class="field">
+        <label>Password (from bot message)</label>
+        <input id="currentPass" type="password" placeholder="••••••••" title="Password from the bot's welcome message"/>
+        <div class="help-text">This was sent to you when the bot connected</div>
+      </div>
+
+      <button class="btn" onclick="userLogin()" style="width:100%;margin-top:1rem;">🔓 Login</button>
+    </div>
+  </div>
+
+  <!-- Settings Section -->
+  <div id="settingsSection" class="hidden">
+    <div class="card">
+      <h2>👤 Account Settings</h2>
+      <p id="userInfo" style="color:#ccc;margin-bottom:1rem;">Logged in as: <strong>—</strong></p>
+      
+      <div id="settingsMsg" class="message"></div>
+
+      <div style="background:rgba(0,200,80,0.08);border:1px solid rgba(0,200,80,0.2);border-radius:10px;padding:1rem;margin-bottom:2rem;">
+        <p style="margin:0;font-size:0.9rem;color:#00c851;"><strong>✅ Connected & Verified</strong></p>
+      </div>
+
+      <h3 style="color:#fff;font-size:1rem;margin-bottom:1rem;margin-top:0;">Change Password</h3>
+      
+      <div class="field">
+        <label>New Password</label>
+        <input id="newPass" type="password" placeholder="Enter new password" minlength="6"/>
+        <div class="help-text">Minimum 6 characters, use letters & numbers</div>
+      </div>
+
+      <div class="field">
+        <label>Confirm New Password</label>
+        <input id="confirmPass" type="password" placeholder="Confirm new password" minlength="6"/>
+      </div>
+
+      <button class="btn" onclick="changePassword()" style="width:100%;margin-bottom:1rem;">🔐 Update Password</button>
+
+      <div class="divider"></div>
+
+      <h3 style="color:#fff;font-size:1rem;margin-bottom:1rem;">Account Info</h3>
+      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:1rem;">
+        <p style="margin:0 0 0.8rem 0;font-size:0.85rem;">
+          <strong>Number:</strong> <span id="displayNumber" style="color:#e8001d;font-family:monospace;">—</span>
+        </p>
+        <p style="margin:0 0 0.8rem 0;font-size:0.85rem;">
+          <strong>Joined:</strong> <span id="displayJoined" style="color:#ccc;">—</span>
+        </p>
+        <p style="margin:0 0 0.8rem 0;font-size:0.85rem;">
+          <strong>Last Login:</strong> <span id="displayLastLogin" style="color:#ccc;">—</span>
+        </p>
+        <p style="margin:0;font-size:0.85rem;">
+          <strong>Bot Commands:</strong> <span id="displayCommands" style="color:#00c851;">Enabled ✓</span>
+        </p>
+      </div>
+
+      <button class="btn btn-secondary" onclick="userLogout()" style="width:100%;margin-top:1.5rem;background:rgba(255,255,255,0.1);color:#ccc;">🚪 Logout</button>
+    </div>
+  </div>
+</div>
+
+<footer id="footer"></footer>
+<script src="js/app.js"></script>
+<script>
+let currentUser = null;
+
+function showMsg(id, type, text) {
+  const msg = document.getElementById(id);
+  msg.className = 'message ' + type;
+  msg.textContent = text;
+  msg.style.display = 'block';
+}
+
+function clearMsg(id) {
+  const msg = document.getElementById(id);
+  msg.style.display = 'none';
+}
+
+async function userLogin() {
+  const number = document.getElementById('userNumber').value.trim().replace(/\D/g, '');
+  const pass = document.getElementById('currentPass').value.trim();
+
+  if (!number || number.length < 7) {
+    showMsg('loginMsg', 'error', '❌ Please enter a valid number');
+    return;
+  }
+  if (!pass || pass.length < 6) {
+    showMsg('loginMsg', 'error', '❌ Please enter the password from bot message');
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/user/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ number, password: pass })
+    });
+    const data = await res.json();
+
+    if (!data.ok) {
+      showMsg('loginMsg', 'error', '❌ ' + (data.msg || 'Login failed'));
+      return;
+    }
+
+    currentUser = { number, password: pass };
+    localStorage.setItem('sasa_user', JSON.stringify(currentUser));
+
+    showMsg('loginMsg', 'success', '✅ Logged in successfully!');
+    
+    setTimeout(() => {
+      document.getElementById('loginSection').classList.add('hidden');
+      document.getElementById('settingsSection').classList.remove('hidden');
+      displayUserInfo();
+    }, 500);
+  } catch (err) {
+    showMsg('loginMsg', 'error', '⚠️ ' + err.message);
+  }
+}
+
+async function displayUserInfo() {
+  if (!currentUser) return;
+  
+  const num = currentUser.number;
+  const jid = num + '@s.whatsapp.net';
+  
+  try {
+    const res = await fetch(`/api/user/info?number=${num}`);
+    const data = await res.json();
+    
+    if (data.ok) {
+      document.getElementById('userInfo').innerHTML = `Logged in as: <strong>+${num}</strong>`;
+      document.getElementById('displayNumber').textContent = '+' + num;
+      document.getElementById('displayJoined').textContent = data.firstSeen ? new Date(data.firstSeen).toLocaleDateString() : '—';
+      document.getElementById('displayLastLogin').textContent = new Date().toLocaleDateString();
+    }
+  } catch (err) {
+    console.warn('Could not fetch user info:', err.message);
+  }
+}
+
+async function changePassword() {
+  const newPass = document.getElementById('newPass').value.trim();
+  const confirmPass = document.getElementById('confirmPass').value.trim();
+
+  if (!newPass || newPass.length < 6) {
+    showMsg('settingsMsg', 'error', '❌ Password must be at least 6 characters');
+    return;
+  }
+
+  if (newPass !== confirmPass) {
+    showMsg('settingsMsg', 'error', '❌ Passwords do not match');
+    return;
+  }
+
+  const btn = event.target;
+  btn.disabled = true;
+  btn.textContent = '⏳ Updating...';
+
+  try {
+    const res = await fetch('/api/user/change-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        number: currentUser.number,
+        oldPassword: currentUser.password,
+        newPassword: newPass
+      })
+    });
+    const data = await res.json();
+
+    if (data.ok) {
+      showMsg('settingsMsg', 'success', '✅ Password changed successfully!');
+      currentUser.password = newPass;
+      localStorage.setItem('sasa_user', JSON.stringify(currentUser));
+      document.getElementById('newPass').value = '';
+      document.getElementById('confirmPass').value = '';
+    } else {
+      showMsg('settingsMsg', 'error', '❌ ' + (data.msg || 'Failed to change password'));
+    }
+  } catch (err) {
+    showMsg('settingsMsg', 'error', '⚠️ ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🔐 Update Password';
+  }
+}
+
+function userLogout() {
+  currentUser = null;
+  localStorage.removeItem('sasa_user');
+  
+  document.getElementById('loginSection').classList.remove('hidden');
+  document.getElementById('settingsSection').classList.add('hidden');
+  
+  document.getElementById('userNumber').value = '';
+  document.getElementById('currentPass').value = '';
+  document.getElementById('newPass').value = '';
+  document.getElementById('confirmPass').value = '';
+  clearMsg('loginMsg');
+  clearMsg('settingsMsg');
+  
+  showMsg('loginMsg', 'info', 'ℹ️ Logged out. See you soon!');
+}
+
+// Auto-login on page load if saved
+document.addEventListener('DOMContentLoaded', () => {
+  const saved = localStorage.getItem('sasa_user');
+  if (saved) {
+    try {
+      currentUser = JSON.parse(saved);
+      document.getElementById('loginSection').classList.add('hidden');
+      document.getElementById('settingsSection').classList.remove('hidden');
+      displayUserInfo();
+    } catch (err) {
+      localStorage.removeItem('sasa_user');
+    }
+  }
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    if (!document.getElementById('loginSection').classList.contains('hidden')) {
+      userLogin();
+    }
+  }
+});
+</script>
+</body>
+</html>
