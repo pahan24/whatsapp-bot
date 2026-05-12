@@ -8,7 +8,7 @@ const qrcode = require('qrcode');
 require('dotenv').config();
 
 const db = require('./firebase');
-const { initFirebase, isBanned, isKnownNumber, markFirstContact, saveInboxMsg, getSettings, registerBot, getBots, getUsers, addCoinsAdmin, getTotalStats } = db;
+const { initFirebase, isBanned, isKnownNumber, markFirstContact, saveInboxMsg, getSettings, registerBot, getBots, getUsers, addCoinsAdmin, getTotalStats, saveSessionToFirebase, getSessionFromFirebase } = db;
 const config = require('./config');
 const { globalLimit, apiLimit, loginLimit, codeLimit, requireAdmin, checkAdminCreds, signAdminToken, securityHeaders, blockSuspicious } = require('./middleware/security');
 
@@ -46,16 +46,43 @@ const CMD_MAP = {
 };
 const NUM_CMDS = new Set(['1','2','3','4','5','6','7']);
 
-const restoreSession = () => {
-  const sd = process.env.SESSION_DATA;
-  if (!sd) return;
+const restoreSession = async () => {
   try {
+    let sd = process.env.SESSION_DATA;
+    if (!sd) sd = await getSessionFromFirebase();
+    if (!sd) return;
+
+    const session = typeof sd === 'string'
+      ? JSON.parse(Buffer.from(sd, 'base64').toString('utf8'))
+      : sd;
+
     const sp = path.join(__dirname, 'sessions', config.sessionId);
     if (!fs.existsSync(sp)) fs.mkdirSync(sp, { recursive: true });
-    const files = JSON.parse(Buffer.from(sd, 'base64').toString('utf8'));
-    for (const [fn, cnt] of Object.entries(files)) fs.writeFileSync(path.join(sp, fn), cnt);
+    for (const [fn, cnt] of Object.entries(session)) fs.writeFileSync(path.join(sp, fn), cnt);
     console.log('✅ Session restored!');
-  } catch (e) { console.warn('⚠️ Session restore:', e.message); }
+  } catch (e) {
+    console.warn('⚠️ Session restore:', e.message);
+  }
+};
+
+const readSessionFiles = (sp) => {
+  const files = {};
+  if (!fs.existsSync(sp)) return files;
+  for (const name of fs.readdirSync(sp)) {
+    const filePath = path.join(sp, name);
+    if (!fs.lstatSync(filePath).isFile()) continue;
+    files[name] = fs.readFileSync(filePath, 'utf8');
+  }
+  return files;
+};
+
+const persistSession = async (sp) => {
+  try {
+    const sessionData = readSessionFiles(sp);
+    if (Object.keys(sessionData).length) await saveSessionToFirebase(sessionData);
+  } catch (e) {
+    console.warn('⚠️ Session sync failed:', e.message);
+  }
 };
 
 const pushSSE = (data) => sseClients.forEach(r => { try { r.write(`data: ${JSON.stringify(data)}\n\n`); } catch {} });
@@ -230,7 +257,14 @@ const startBot = async () => {
     browser:['SASA MD','Chrome','5.2.0'],
     generateHighQualityLinkPreview:true, syncFullHistory:false,
   });
-  sock.ev.on('creds.update', saveCreds);
+  sock.ev.on('creds.update', async (creds) => {
+    try {
+      await saveCreds(creds);
+      await persistSession(sp);
+    } catch (e) {
+      console.warn('⚠️ Session save failed:', e.message);
+    }
+  });
 
   sock.ev.on('connection.update', async ({ connection, lastDisconnect, qr }) => {
     if (qr) {
@@ -292,5 +326,8 @@ const startBot = async () => {
 
 (async () => {
   console.log(`\n🤖 SASA MD v${config.version} starting...`);
-  initFirebase(); restoreSession(); startServer(); await startBot();
+  initFirebase();
+  await restoreSession();
+  startServer();
+  await startBot();
 })();
