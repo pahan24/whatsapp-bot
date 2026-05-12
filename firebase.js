@@ -23,6 +23,8 @@ const initFirebase = () => {
   }
 };
 
+const getDb = () => db;
+
 const clean = (jid) => jid?.replace(/[^0-9]/g, '') || '';
 
 const safeGet    = async (p) => { if (!db) return null; try { return (await db.ref(p).once('value')).val(); } catch { return null; } };
