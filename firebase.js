@@ -45,6 +45,9 @@ const disableFirebase = (err) => {
   if (!firebaseEnabled) return;
   firebaseEnabled = false;
   db = null;
+  if (admin.apps.length) {
+    try { admin.app().delete(); } catch (cleanupErr) { console.warn('⚠️ Firebase cleanup failed:', cleanupErr?.message || cleanupErr); }
+  }
   console.warn('⚠️ Firebase disabled after error:', err?.message || err || 'unknown');
 };
 
