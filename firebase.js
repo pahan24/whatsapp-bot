@@ -2,6 +2,7 @@ const admin = require('firebase-admin');
 require('dotenv').config();
 
 let db = null;
+let firebaseEnabled = false;
 
 const initFirebase = () => {
   const missing = [];
@@ -12,6 +13,7 @@ const initFirebase = () => {
   if (missing.length) {
     console.warn('⚠️ Firebase not connected: missing environment variables', missing.join(', '));
     console.warn('   Bot will run without database features.');
+    firebaseEnabled = false;
     return;
   }
 
@@ -27,22 +29,31 @@ const initFirebase = () => {
       });
     }
     db = admin.database();
+    firebaseEnabled = true;
     console.log('✅ Firebase connected!');
   } catch (err) {
     console.warn('⚠️ Firebase not connected:', err.message);
     console.warn('   Bot will run without database features.');
     db = null;
+    firebaseEnabled = false;
   }
 };
 
-const getDb = () => db;
+const getDb = () => firebaseEnabled ? db : null;
+
+const disableFirebase = (err) => {
+  if (!firebaseEnabled) return;
+  firebaseEnabled = false;
+  db = null;
+  console.warn('⚠️ Firebase disabled after error:', err?.message || err || 'unknown');
+};
 
 const clean = (jid) => jid?.replace(/[^0-9]/g, '') || '';
 
-const safeGet    = async (p) => { if (!db) return null; try { return (await db.ref(p).once('value')).val(); } catch { return null; } };
-const safeSet    = async (p, d) => { if (!db) return; try { await db.ref(p).set(d); } catch {} };
-const safeUpdate = async (p, d) => { if (!db) return; try { await db.ref(p).update(d); } catch {} };
-const safeRemove = async (p) => { if (!db) return; try { await db.ref(p).remove(); } catch {} };
+const safeGet    = async (p) => { if (!db) return null; try { return (await db.ref(p).once('value')).val(); } catch (err) { disableFirebase(err); return null; } };
+const safeSet    = async (p, d) => { if (!db) return; try { await db.ref(p).set(d); } catch (err) { disableFirebase(err); } };
+const safeUpdate = async (p, d) => { if (!db) return; try { await db.ref(p).update(d); } catch (err) { disableFirebase(err); } };
+const safeRemove = async (p) => { if (!db) return; try { await db.ref(p).remove(); } catch (err) { disableFirebase(err); } };
 
 // ── Session (Heroku support) ──────────────────────────────────
 const saveSessionToFirebase = async (sessionData) => {
