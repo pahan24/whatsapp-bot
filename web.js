@@ -4,12 +4,13 @@ const path = require('path');
 require('dotenv').config();
 
 const config = require('./config');
-const { globalLimit, apiLimit, securityHeaders, blockSuspicious } = require('./middleware/security');
+const { globalLimit, apiLimit, loginLimit, securityHeaders, blockSuspicious } = require('./middleware/security');
 
 const SITE_DIR = path.join(__dirname, 'website');
 
 const startServer = () => {
   const app = express();
+  app.set('trust proxy', 1); // Fix for Heroku rate limit warning
   app.use(helmet({
     contentSecurityPolicy: {
       directives: {
@@ -75,6 +76,16 @@ const startServer = () => {
     res.status(503).json({ error: 'Bot server unavailable' });
   });
 
+  app.post('/verify', loginLimit, (req, res) => {
+    const { number, password } = req.body;
+    if (!number || !password) return res.json({ ok:false });
+    const clean = number.replace(/\D/g,'');
+    // Demo mode: accept 'demo' as password for any number
+    if (password === 'demo') return res.json({ ok:true, number:clean, pass:'demo' });
+    // Otherwise, bot is offline
+    return res.json({ ok:false, msg:'Bot server offline — use demo password "demo"' });
+  });
+
   app.use((req, res) => {
     if (req.path.startsWith('/api/')) return res.status(404).json({ error:'Not found' });
     res.status(404).sendFile(path.join(SITE_DIR,'index.html'));
@@ -86,3 +97,4 @@ const startServer = () => {
 };
 
 startServer();
+

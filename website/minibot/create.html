@@ -306,7 +306,7 @@ async function generateCode() {
     startTimer(60);
     err.style.display='block';
     err.style.color='var(--gold)';
-    err.textContent='⚠ Demo mode — connect bot server for real pairing.';
+    err.textContent='⚠️ Demo mode: Bot offline. Use password "demo" in settings.';
   } finally {
     btn.disabled=false; btn.textContent='🔗 GENERATE PAIRING CODE';
   }
