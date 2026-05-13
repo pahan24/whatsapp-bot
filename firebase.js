@@ -4,7 +4,7 @@ require('dotenv').config();
 let db = null;
 let firebaseEnabled = false;
 
-const initFirebase = () => {
+const initFirebase = async () => {
   const missing = [];
   if (!process.env.FIREBASE_PROJECT_ID) missing.push('FIREBASE_PROJECT_ID');
   if (!process.env.FIREBASE_CLIENT_EMAIL) missing.push('FIREBASE_CLIENT_EMAIL');
@@ -29,11 +29,17 @@ const initFirebase = () => {
       });
     }
     db = admin.database();
+    const connectTest = db.ref('.info/connected').once('value');
+    const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Firebase connection timeout')), 5000));
+    await Promise.race([connectTest, timeout]);
     firebaseEnabled = true;
     console.log('✅ Firebase connected!');
   } catch (err) {
-    console.warn('⚠️ Firebase not connected:', err.message);
+    console.warn('⚠️ Firebase not connected or unreachable:', err.message || err);
     console.warn('   Bot will run without database features.');
+    if (admin.apps.length) {
+      try { admin.app().delete(); } catch (cleanupErr) { console.warn('⚠️ Firebase cleanup failed:', cleanupErr?.message || cleanupErr); }
+    }
     db = null;
     firebaseEnabled = false;
   }

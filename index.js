@@ -30,7 +30,8 @@ const { handleChannelMessage } = require('./commands/channel');
 
 const OWNER_JID = `${config.ownerNumber}@s.whatsapp.net`;
 const SITE_DIR  = path.join(__dirname, 'website');
-const BOT_ENABLED = process.env.DISABLE_BOT !== 'true';
+const IS_HEROKU = Boolean(process.env.DYNO);
+const BOT_ENABLED = process.env.DISABLE_BOT !== 'true' && (!IS_HEROKU || process.env.ENABLE_BOT === 'true');
 let botRetries = 0;
 const MAX_BOT_RETRIES = 3;
 
@@ -236,7 +237,7 @@ const startServer = () => {
     res.status(404).sendFile(path.join(SITE_DIR,'index.html'));
   });
 
-  app.listen(config.port, () => {
+  app.listen(config.port, '0.0.0.0', () => {
     console.log(`🌐 Server → http://localhost:${config.port}`);
     console.log(`🔐 Admin  → http://localhost:${config.port}/admin\n`);
   });
@@ -343,12 +344,16 @@ const startBot = async () => {
 
 (async () => {
   console.log(`\n🤖 SASA MD v${config.version} starting...`);
-  initFirebase();
+  await initFirebase();
   await restoreSession();
   startServer();
 
   if (!BOT_ENABLED) {
-    console.log('⚠️ Bot startup disabled by DISABLE_BOT=true. Only the website is running.');
+    if (IS_HEROKU && process.env.ENABLE_BOT !== 'true') {
+      console.log('⚠️ Heroku environment detected. Bot startup is disabled by default here. Set ENABLE_BOT=true to enable it.');
+    } else {
+      console.log('⚠️ Bot startup disabled by DISABLE_BOT=true. Only the website is running.');
+    }
     return;
   }
 
