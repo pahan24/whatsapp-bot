@@ -53,8 +53,27 @@ const startServer = () => {
   }
 
   app.get('/robots.txt', (_, res) => res.sendFile(path.join(SITE_DIR, 'robots.txt')));
-  app.get('/status', apiLimit, (_, res) => res.json({ status: 'website', version: config.version }));
+  app.get('/status', apiLimit, (_, res) => res.json({ status: 'website', version: config.version, hasQR: false }));
   app.get('/health', (_, res) => res.json({ ok: true, status: 'website', version: config.version }));
+
+  app.get('/events', (req, res) => {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.flushHeaders();
+    res.write(`data: ${JSON.stringify({ type:'status', status:'offline' })}\n\n`);
+    const hb = setInterval(() => { try { res.write(':hb\n\n'); } catch {} }, 20000);
+    req.on('close', () => clearInterval(hb));
+  });
+
+  app.get('/qr-image', apiLimit, (_, res) => {
+    res.status(503).json({ error: 'Bot server unavailable' });
+  });
+
+  app.get('/code', apiLimit, (_, res) => {
+    res.status(503).json({ error: 'Bot server unavailable' });
+  });
 
   app.use((req, res) => {
     if (req.path.startsWith('/api/')) return res.status(404).json({ error:'Not found' });
