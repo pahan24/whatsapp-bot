@@ -30,6 +30,9 @@ const { handleChannelMessage } = require('./commands/channel');
 
 const OWNER_JID = `${config.ownerNumber}@s.whatsapp.net`;
 const SITE_DIR  = path.join(__dirname, 'website');
+const BOT_ENABLED = process.env.DISABLE_BOT !== 'true';
+let botRetries = 0;
+const MAX_BOT_RETRIES = 3;
 
 let currentQR = null, qrImageData = null, botStatus = 'disconnected';
 const sseClients = [];
@@ -284,9 +287,16 @@ const startBot = async () => {
       const code = lastDisconnect?.error?.output?.statusCode;
       botStatus='disconnected'; currentQR=null; qrImageData=null;
       pushSSE({ type:'status', status:'disconnected' });
-      if (code!==DisconnectReason.loggedOut) setTimeout(startBot,5000);
+      if (code!==DisconnectReason.loggedOut && botRetries < MAX_BOT_RETRIES) {
+        botRetries += 1;
+        console.warn(`⚠️ Bot disconnected. Retry attempt ${botRetries}/${MAX_BOT_RETRIES} in 5s.`);
+        setTimeout(startBot,5000);
+      } else if (code!==DisconnectReason.loggedOut) {
+        console.warn('⚠️ Bot disconnected and max retries reached. Bot restart disabled.');
+      }
     }
     if (connection==='open') {
+      botRetries = 0;
       botStatus='connected'; currentQR=null; qrImageData=null;
       console.log(`\n✅ SASA MD v${config.version} — Connected!\n`);
       pushSSE({ type:'status', status:'connected' });
@@ -336,16 +346,28 @@ const startBot = async () => {
   initFirebase();
   await restoreSession();
   startServer();
+
+  if (!BOT_ENABLED) {
+    console.log('⚠️ Bot startup disabled by DISABLE_BOT=true. Only the website is running.');
+    return;
+  }
+
   try {
     await startBot();
   } catch (err) {
     console.error('Bot startup failed:', err?.message || err);
-    setTimeout(async () => {
-      try {
-        await startBot();
-      } catch (retryErr) {
-        console.error('Bot restart failed:', retryErr?.message || retryErr);
-      }
-    }, 5000);
+    if (botRetries < MAX_BOT_RETRIES) {
+      botRetries += 1;
+      console.warn(`⚠️ Retrying bot startup (${botRetries}/${MAX_BOT_RETRIES}) in 5s.`);
+      setTimeout(async () => {
+        try {
+          await startBot();
+        } catch (retryErr) {
+          console.error('Bot restart failed:', retryErr?.message || retryErr);
+        }
+      }, 5000);
+    } else {
+      console.error('⚠️ Max bot startup retries reached. Website will remain available.');
+    }
   }
 })();
