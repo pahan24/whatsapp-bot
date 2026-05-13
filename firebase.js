@@ -4,13 +4,24 @@ require('dotenv').config();
 let db = null;
 
 const initFirebase = () => {
+  const missing = [];
+  if (!process.env.FIREBASE_PROJECT_ID) missing.push('FIREBASE_PROJECT_ID');
+  if (!process.env.FIREBASE_CLIENT_EMAIL) missing.push('FIREBASE_CLIENT_EMAIL');
+  if (!process.env.FIREBASE_PRIVATE_KEY) missing.push('FIREBASE_PRIVATE_KEY');
+  if (!process.env.FIREBASE_DATABASE_URL) missing.push('FIREBASE_DATABASE_URL');
+  if (missing.length) {
+    console.warn('⚠️ Firebase not connected: missing environment variables', missing.join(', '));
+    console.warn('   Bot will run without database features.');
+    return;
+  }
+
   try {
     if (!admin.apps.length) {
       admin.initializeApp({
         credential: admin.credential.cert({
           projectId:   process.env.FIREBASE_PROJECT_ID,
           clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-          privateKey:  process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+          privateKey:  process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
         }),
         databaseURL: process.env.FIREBASE_DATABASE_URL,
       });
@@ -18,8 +29,9 @@ const initFirebase = () => {
     db = admin.database();
     console.log('✅ Firebase connected!');
   } catch (err) {
-    console.warn('⚠️  Firebase not connected:', err.message);
+    console.warn('⚠️ Firebase not connected:', err.message);
     console.warn('   Bot will run without database features.');
+    db = null;
   }
 };
 

@@ -12,6 +12,13 @@ const { initFirebase, isBanned, isKnownNumber, markFirstContact, saveInboxMsg, g
 const config = require('./config');
 const { globalLimit, apiLimit, loginLimit, codeLimit, requireAdmin, checkAdminCreds, signAdminToken, securityHeaders, blockSuspicious } = require('./middleware/security');
 
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled Rejection:', reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+});
+
 const menuCmd    = require('./commands/menu');
 const ownerCmd   = require('./commands/owner');
 const toolsCmd   = require('./commands/tools');
@@ -329,5 +336,16 @@ const startBot = async () => {
   initFirebase();
   await restoreSession();
   startServer();
-  await startBot();
+  try {
+    await startBot();
+  } catch (err) {
+    console.error('Bot startup failed:', err?.message || err);
+    setTimeout(async () => {
+      try {
+        await startBot();
+      } catch (retryErr) {
+        console.error('Bot restart failed:', retryErr?.message || retryErr);
+      }
+    }, 5000);
+  }
 })();
