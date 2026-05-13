@@ -33,6 +33,7 @@ FIREBASE_PRIVATE_KEY   = -----BEGIN PRIVATE KEY-----\nYOUR_KEY\n-----END PRIVATE
 FIREBASE_DATABASE_URL  = https://your-project-id-default-rtdb.firebaseio.com
 AUTO_READ         = true
 AUTO_TYPING       = true
+ENABLE_BOT        = true
 ```
 
 ### Step 4 — Get Session (IMPORTANT!)
