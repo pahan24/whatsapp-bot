@@ -1,6 +1,6 @@
 # 🚀 SASA MD — Heroku Deploy Guide
 
-## Method 1: GitHub → Heroku (Recommended)
+## Option 1: Website Only (No Bot)
 
 ### Step 1 — Push to GitHub
 ```bash
@@ -21,6 +21,45 @@ git push -u origin main
 ### Step 3 — Add Config Vars
 Go to: **Settings → Config Vars → Reveal Config Vars**
 
+Add these variables:
+```
+BOT_NAME          = SASA MD
+PREFIX            = .
+OWNER_NUMBER      = 94727114552
+OWNER_NAME        = PAHAN
+DISABLE_BOT       = true
+```
+
+### Step 4 — Deploy
+- Heroku → Deploy tab → Manual deploy → Deploy Branch
+- Watch logs: Heroku → More → View logs
+
+---
+
+## Option 2: Full Bot + Website
+
+### Step 1 — Modify Procfile
+Before deploying, change `Procfile` from `web: node web.js` to:
+```
+web: node index.js
+```
+
+### Step 2 — Push to GitHub
+```bash
+git add Procfile
+git commit -m "Enable full bot"
+git push origin main
+```
+
+### Step 3 — Create Heroku App
+1. Go to [heroku.com](https://heroku.com) → New → Create new app
+2. Name: `sasa-md` (or any name)
+3. Deploy tab → Connect GitHub → Select your repo
+4. Enable Automatic deploys
+
+### Step 4 — Add Config Vars
+Go to: **Settings → Config Vars → Reveal Config Vars**
+
 Add ALL these variables:
 ```
 BOT_NAME          = SASA MD
@@ -36,7 +75,7 @@ AUTO_TYPING       = true
 ENABLE_BOT        = true
 ```
 
-### Step 4 — Get Session (IMPORTANT!)
+### Step 5 — Get Session (IMPORTANT!)
 The bot needs a session to connect. Do this FIRST on your local PC:
 
 ```bash
@@ -55,7 +94,7 @@ Then add to Heroku Config Vars:
 SESSION_DATA = (paste the long text here)
 ```
 
-### Step 5 — Deploy
+### Step 6 — Deploy
 - Heroku → Deploy tab → Manual deploy → Deploy Branch
 - Watch logs: Heroku → More → View logs
 
@@ -63,8 +102,25 @@ SESSION_DATA = (paste the long text here)
 
 ## Method 2: Heroku CLI
 
+### For Website Only:
 ```bash
-# Install Heroku CLI first
+heroku login
+heroku create sasa-md-website
+heroku config:set BOT_NAME="SASA MD"
+heroku config:set OWNER_NUMBER="94727114552"
+heroku config:set DISABLE_BOT="true"
+git push heroku main
+heroku logs --tail
+```
+
+### For Full Bot:
+```bash
+# First, change Procfile to: web: node index.js
+echo "web: node index.js" > Procfile
+git add Procfile
+git commit -m "Enable bot"
+git push
+
 heroku login
 heroku create sasa-md-bot
 heroku config:set BOT_NAME="SASA MD"
@@ -74,6 +130,7 @@ heroku config:set FIREBASE_PROJECT_ID="your-id"
 heroku config:set FIREBASE_DATABASE_URL="https://your-id-rtdb.firebaseio.com"
 heroku config:set FIREBASE_CLIENT_EMAIL="your@email.iam.gserviceaccount.com"
 heroku config:set FIREBASE_PRIVATE_KEY="$(cat privatekey.pem)"
+heroku config:set ENABLE_BOT="true"
 heroku config:set SESSION_DATA="$(node getsession.js | tail -1)"
 git push heroku main
 heroku logs --tail
@@ -82,10 +139,17 @@ heroku logs --tail
 ---
 
 ## ✅ Verify Deployment
-After deploying, check:
+
+### For Website Only:
+- `https://your-app.herokuapp.com/health` → should return `{"status":"website"}`
+- `https://your-app.herokuapp.com/` → should show SASA MD website
+- Pairing works in demo mode
+
+### For Full Bot:
 - `https://your-app.herokuapp.com/health` → should return `{"status":"ok"}`
 - `https://your-app.herokuapp.com/` → should show SASA MD website
 - WhatsApp → Bot should send Sinhala connect message
+- QR code generation works
 
 ---
 
@@ -98,7 +162,8 @@ After deploying, check:
 | `Session expired` | Re-run `getsession.js` locally and update `SESSION_DATA` |
 | `Firebase error` | Check all 4 Firebase config vars are set correctly |
 | `H10 App crashed` | Check logs: `heroku logs --tail` |
-| `R10 Boot timeout` | App must listen on `process.env.PORT` within 60s |
+| `Website not loading` | For website-only: set `DISABLE_BOT=true`. For full bot: change Procfile to `web: node index.js` and set `ENABLE_BOT=true` |
+| `Website not loading` | If using full bot, set `DISABLE_BOT=true` for website-only mode |
 
 ---
 
