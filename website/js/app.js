@@ -49,13 +49,23 @@ const LOGO_SVG = `<svg width="38" height="38" viewBox="0 0 42 42" fill="none" xm
 
 // ── Navigation items (CLEAN URLs — no .html) ──
 const NAV_ITEMS = [
-  { href: '/',                icon: '🏠', label: 'Home'       },
-  { href: '/minibot',         icon: '🤖', label: 'Mini Bot'   },
-  { href: '/minibot/create',  icon: '⚡', label: 'Main Bot'   },
-  { href: '/about',           icon: 'ℹ',  label: 'About Us'   },
-  { href: '/contact',         icon: '✉',  label: 'Contact'    },
-  { href: '/privacy',         icon: '🔒', label: 'Privacy'    },
-  { href: '/channel',         icon: '💬', label: 'Channel'    },
+  // Website Features
+  { href: '/',                icon: '🏠', label: 'Home'           },
+  { href: '/about',           icon: 'ℹ',  label: 'About Us'       },
+  { href: '/contact',         icon: '✉',  label: 'Contact'        },
+  { href: '/privacy',         icon: '🔒', label: 'Privacy'        },
+  { href: '/channel',         icon: '💬', label: 'Channel'        },
+  // Bot Features  
+  { href: '/pair',            icon: '⚡', label: 'Pair Bot'       },
+  { href: '/settings',        icon: '⚙',  label: 'Settings'       },
+  { href: '/admin',           icon: '👨‍💼', label: 'Admin Panel'    },
+  // Mini Bot Features
+  { href: '/minibot',         icon: '🤖', label: 'Mini Bot'       },
+  { href: '/minibot/create',  icon: '🚀', label: 'Deploy Bot'     },
+  { href: '/minibot/setting', icon: '⚙',  label: 'Bot Settings'  },
+  { href: '/minibot/autoreply',icon: '🤖', label: 'Auto Reply'   },
+  { href: '/minibot/autosave', icon: '💾', label: 'Auto Save'    },
+  { href: '/minibot/coin',     icon: '💰', label: 'Coin System'  },
 ];
 
 // Detect active route using window.location.pathname
@@ -108,14 +118,34 @@ function buildNav() {
       <button onclick="closeDrawer()" style="width:34px;height:34px;background:rgba(232,0,29,0.15);border:none;border-radius:8px;color:#fff;font-size:1rem;cursor:pointer;">✕</button>
     </div>
     <div class="drawer-nav">
-      ${NAV_ITEMS.map(item => `
+      <!-- WEBSITE FEATURES -->
+      <div style="font-size:0.75rem;font-weight:900;text-transform:uppercase;letter-spacing:2px;color:#e8001d;padding:1rem 1rem 0.5rem;opacity:0.7;">🌐 Website</div>
+      ${NAV_ITEMS.filter(i => ['/', '/about', '/contact', '/privacy', '/channel'].includes(i.href)).map(item => `
+        <a href="${item.href}" class="drawer-item ${isActive(item.href) ? 'active' : ''}">
+          <div class="drawer-icon">${item.icon}</div>
+          <span>${item.label}</span>
+          <span class="drawer-arrow">›</span>
+        </a>`).join('')}
+      
+      <!-- BOT FEATURES -->
+      <div style="font-size:0.75rem;font-weight:900;text-transform:uppercase;letter-spacing:2px;color:#00c851;padding:1rem 1rem 0.5rem;opacity:0.7;margin-top:0.5rem;">🤖 Bot Control</div>
+      ${NAV_ITEMS.filter(i => ['/pair', '/settings', '/admin'].includes(i.href)).map(item => `
+        <a href="${item.href}" class="drawer-item ${isActive(item.href) ? 'active' : ''}">
+          <div class="drawer-icon">${item.icon}</div>
+          <span>${item.label}</span>
+          <span class="drawer-arrow">›</span>
+        </a>`).join('')}
+      
+      <!-- MINI BOT FEATURES -->
+      <div style="font-size:0.75rem;font-weight:900;text-transform:uppercase;letter-spacing:2px;color:#6496ff;padding:1rem 1rem 0.5rem;opacity:0.7;margin-top:0.5rem;">⚡ Mini Bot</div>
+      ${NAV_ITEMS.filter(i => i.href.startsWith('/minibot')).map(item => `
         <a href="${item.href}" class="drawer-item ${isActive(item.href) ? 'active' : ''}">
           <div class="drawer-icon">${item.icon}</div>
           <span>${item.label}</span>
           <span class="drawer-arrow">›</span>
         </a>`).join('')}
     </div>
-    <div class="drawer-footer">© 2025 SASA MD TEAM</div>
+    <div class="drawer-footer">© 2025 SASA MD TEAM | v5.2.0</div>
   `;
 
   document.body.appendChild(overlay);

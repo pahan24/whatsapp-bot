@@ -111,10 +111,10 @@ const startServer = () => {
   const PAGES = {
     '/':'index.html', '/about':'about.html', '/contact':'contact.html',
     '/privacy':'privacy.html', '/channel':'channel.html',
+    '/settings':'settings.html', '/admin':'admin.html', '/pair':'minibot/create.html',
     '/minibot':'minibot/index.html', '/minibot/setting':'minibot/setting.html',
     '/minibot/autoreply':'minibot/autoreply.html', '/minibot/autosave':'minibot/autosave.html',
     '/minibot/coin':'minibot/coin.html', '/minibot/create':'minibot/create.html',
-    '/pair':'minibot/create.html', '/admin':'admin/index.html',
   };
   for (const [r, f] of Object.entries(PAGES))
     app.get(r, (_, res) => res.sendFile(path.join(SITE_DIR, f)));
